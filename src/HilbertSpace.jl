@@ -37,6 +37,7 @@ function explore_connected_states(s_init::Integer, H_terms::Vector{Tuple}, N_sit
     while count < length(states)
         if (count % 100 == 0) || (count == length(states) - 1)
             println("state: $count, found: $(length(states))")
+            flush(stdout)
         end
 
         state = states[count+1]
