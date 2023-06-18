@@ -8,12 +8,10 @@ Given an initial state `s_init` and the Hamiltonian terms `H_terms`, the functio
 and returns the Hamiltonian of this connected subspace, as well as its basis states.
 
 # Arguments
-- `s_init::Integer`: initial state
-- `H_terms::Vector{Tuple}`: the list of terms in the Hamiltonian
-- `N_sites::Integer`: the number of sites in the system
+- `s_init::Vector{<:Integer}`: initial state
+- `H::Hamiltonian`: Hamiltonian
 - `construct_ham::Bool=true`: if true, construct the Hamiltonian as a sparse matrix
 - `check_nonzero::Bool=true`: if true, check for zero matrix elements and delete them after the Hamiltonian is constructed
-- `check_hermitian::Bool=false`: check if the Hamiltonian is Hermitian, raise a warning if not
 
 # Returns
 - `ham`: Hamiltonian as a sparse csr matrix (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
@@ -22,10 +20,7 @@ and returns the Hamiltonian of this connected subspace, as well as its basis sta
 - `cols`: list of column numbers for all non-zero matrix elements of ham
 - `mels`: list of values of all non-zero matrix elements
 """
-function explore_connected_states(s_init::Integer, H_terms::Vector{Tuple}, N_sites::Integer; construct_ham::Bool=true, check_nonzero::Bool=true, check_hermitian::Bool=false)
-    # Total number of bits in a state (TODO: add more than 2 d.o.f. at each site)
-    N_tot = N_sites
-
+function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; construct_ham::Bool=true, check_nonzero::Bool=true)
     # Create a collection of states. At first, only s_init is in the collection.
     states = [s_init]
     count = 0
@@ -41,24 +36,14 @@ function explore_connected_states(s_init::Integer, H_terms::Vector{Tuple}, N_sit
         end
 
         state = states[count+1]
-        for term in H_terms
-            coef, ops = term
-            s_temp = state
-            annihilation_flag = false
-            for op in reverse(ops)
-                site, dag = op
-                if get_bit(s_temp, site) ⊻ (dag == '+')  # check if the state is annihilated
-                    s_temp = flip_bit(s_temp, site)  # Switch 0->1 or 1->0
-                else
-                    annihilation_flag = true
-                    break
-                end
-            end
-            if !annihilation_flag
+        for (coef, idx, flippable, flip) in H.H_terms
+            if flippable(state[idx])
+                state_new = copy(state)
+                state_new[idx] = flip(state_new[idx])
                 # Check if we already have such a state in our collection
-                if !(s_temp in states)
+                if !(state_new in states)
                     # If not, then add it to the collection
-                    push!(states, s_temp)
+                    push!(states, state_new)
                     if construct_ham
                         # Add the corresponding matrix element
                         push!(rows, count)
@@ -67,7 +52,7 @@ function explore_connected_states(s_init::Integer, H_terms::Vector{Tuple}, N_sit
                     end
                 elseif construct_ham
                     # If yes, then determine the index of this state
-                    ind = findfirst(x -> x == s_temp, states) - 1
+                    ind = findfirst(x -> x == state_new, states) - 1
                     # Add the corresponding matrix element
                     push!(rows, count)
                     push!(cols, ind)
@@ -95,17 +80,9 @@ function explore_connected_states(s_init::Integer, H_terms::Vector{Tuple}, N_sit
         else
             ham = sparse(Int[], Int[], Complex[])
         end
-    
-        if check_hermitian
-            if nnz(ham - adjoint(ham)) > 0
-                throw(Warning("Hamiltonian is not Hermitian!"))
-            end
-        end
+        return states, ham, rows, cols, mels
     else
-        ham = nothing
-        rows = nothing
-        cols = nothing
-        mels = nothing
+        return states
     end
-    return states, ham, rows, cols, mels
+    
 end

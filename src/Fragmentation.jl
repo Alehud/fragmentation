@@ -7,9 +7,9 @@ using Random
 using SparseArrays
 using Combinatorics
 
-include("EntanglementEntropy.jl")
-include("HilbertSpace.jl")
 include("Hamiltonians.jl")
+include("HilbertSpace.jl")
+include("EntanglementEntropy.jl")
 include("Utils.jl")
 
 end
