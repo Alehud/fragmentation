@@ -22,7 +22,7 @@ end
 
 
 dof_dim = 3
-L = 3
+L = 4
 H_terms = Tuple[]
 for i in 1:L
     push!(H_terms, (1.0, [i, mod(i+1-1, L)+1, mod(i+2-1, L)+1], flippable, flip))
@@ -35,16 +35,21 @@ for H_terms in H.H_terms
     println(H_terms)
 end
 
-s_init = Int8[0, 2, 0]
-println("s_init: $s_init")
-states, ham, rows, cols, mels = explore_connected_states(s_init, H, construct_ham=true, check_nonzero=false)
-println("$(length(states)) states found", )
-println("states: $states")
-println("ham: ", ham)
-display(ham)
-println("rows: $rows")
-println("cols: $cols")
-println("mels: $mels")
+# s_init = Int8[0, 2, 0, 2]
+# println("s_init: $s_init")
+# states, ham, rows, cols, mels = explore_connected_states(s_init, H, construct_ham=true)
+# println("$(length(states)) states found", )
+# println("states: $states")
+# println("ham: ", ham)
+# display(ham)
+# println("rows: $rows")
+# println("cols: $cols")
+# println("mels: $mels")
+
+states_all, hams = explore_full_space(H, 4, construct_ham=true)
+for states in states_all
+    println(states)
+end
 
 
 
