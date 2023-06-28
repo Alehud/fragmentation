@@ -1,4 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels
 
 
 """
@@ -125,4 +125,21 @@ end
 
 function get_bit(x::BigInt, k::Integer)::Bool
     return (x >> k) & BigInt(1)
+end
+
+
+"""
+    vertex_labels(states, legend)
+
+Create string labels out of the vector with states.
+
+# Arguments
+- `states::Vector{Vector{<:Integer}}`: vector with states
+- `legend::Dict`: rules for substituting integers with symbols
+
+# Returns
+- `Vector{String}`: string labels
+"""
+function vertex_labels(states::Vector{Vector{<:Integer}}, legend::Dict)
+    return [replace(join(string.(state)), legend) for state in states]
 end
