@@ -135,11 +135,15 @@ Create string labels out of the vector with states.
 
 # Arguments
 - `states::Vector{Vector{<:Integer}}`: vector with states
-- `legend::Dict`: rules for substituting integers with symbols
+- `legend::Vector{Pair{String, String}} = nothing`: rules for substituting integers with symbols
 
 # Returns
 - `Vector{String}`: string labels
 """
-function vertex_labels(states::Vector{Vector{<:Integer}}, legend::Dict)
-    return [replace(join(string.(state)), legend) for state in states]
+function vertex_labels(states::Vector{<:Vector{<:Integer}}, legend::Vector{Pair{String, String}} = nothing)
+    if isnothing(legend)
+        return [join(string.(state)) for state in states]
+    else
+        return [replace(join(string.(state)), legend...) for state in states]
+    end
 end
