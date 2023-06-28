@@ -72,17 +72,13 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
             if check_nonzero
                 # Remove zero elements
                 dropzeros!(ham)
-                # Access new nonzero matrix elements and their row and column indices
-                rows, cols, mels = findnz(ham)
-                rows .-= 1
-                cols .-= 1
             end
         else
             ham = sparse(Int[], Int[], Complex[])
         end
-        return states, ham, rows, cols, mels
+        return states, ham
     else
-        return states, nothing, nothing, nothing, nothing
+        return states, nothing
     end
 end
 
@@ -92,7 +88,7 @@ function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Boo
     hams = []
     for state_init in [collect(x) for x in product(fill([0:(H.dof_dim-1);], N_sites)...)]
         if !any([state_init in states for states in states_all])
-            states, ham, _, _, _ = explore_connected_states(state_init, H, construct_ham=construct_ham)
+            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
             push!(states_all, states)
             push!(hams, ham)
         end
