@@ -2,23 +2,20 @@ export explore_connected_states, explore_full_space
 
 
 """
-    explore_connected_states(s_init, H_terms, N_sites, check_hermitian, return_ham)
+    explore_connected_states(s_init, H, N_sites, check_hermitian, return_ham)
 
-Given an initial state `s_init` and the Hamiltonian terms `H_terms`, the function iteratively explores the Hilbert space that is connected to the initial state,
+Given an initial state `s_init` and the Hamiltonian `H`, the function iteratively explores the Hilbert space that is connected to the initial state,
 and returns the Hamiltonian of this connected subspace, as well as its basis states.
 
 # Arguments
 - `s_init::Vector{<:Integer}`: initial state
 - `H::Hamiltonian`: Hamiltonian
-- `construct_ham::Bool=true`: if true, construct the Hamiltonian as a sparse matrix
+- `construct_ham::Bool=true`: if true, construct the Hamiltonian (as a sparse matrix)
 - `check_nonzero::Bool=true`: if true, check for zero matrix elements and delete them after the Hamiltonian is constructed
 
 # Returns
+- `states`: vector of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
 - `ham`: Hamiltonian as a sparse csr matrix (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
-- `states`: list of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
-- `rows`: list of row numbers for all non-zero matrix elements of ham
-- `cols`: list of column numbers for all non-zero matrix elements of ham
-- `mels`: list of values of all non-zero matrix elements
 """
 function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; construct_ham::Bool=true, check_nonzero::Bool=false)
     # Create a collection of states. At first, only s_init is in the collection.
@@ -83,6 +80,20 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
 end
 
 
+"""
+    explore_full_space(H, N_sites; construct_ham)
+
+Explore the full Hilbert space of the model on `N_sites` with Hamiltonian `H`.
+
+# Arguments
+- `H::Hamiltonian`: Hamiltonian
+- `N_sites::Integer`: total number of sites
+- `construct_ham::Bool=true`: if true, construct the Hamiltonian (as a sparse matrix)
+
+# Returns
+- `hams`: vector of Hamiltonians as sparse csr matrices (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
+- `states_all`: vectors of vectors of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
+"""
 function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Bool=true)
     states_all = Vector{Vector{<:Integer}}[]
     hams = []
