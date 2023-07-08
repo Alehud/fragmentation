@@ -10,6 +10,7 @@ using Combinatorics
 include("Hamiltonians.jl")
 include("HilbertSpace.jl")
 include("EntanglementEntropy.jl")
+include("StochasticDynamics.jl")
 include("Utils.jl")
 
 end
