@@ -1,4 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func
 
 
 """
@@ -145,5 +145,26 @@ function vertex_labels(states::Vector{<:Vector{<:Integer}}, legend::Vector{Pair{
         return [join(string.(state)) for state in states]
     else
         return [replace(join(string.(state)), legend...) for state in states]
+    end
+end
+
+
+function remove_vacuum!(state_labels::Vector{String}, g::Graph)
+    i = 1
+    while i ≤ length(state_labels)
+        vs = findall(x -> replace(x, "_" => "") == replace(state_labels[i], "_" => ""), state_labels)
+        merge_vertices!(g, vs)
+        deleteat!(state_labels, vs[2:end])
+        state_labels[i] = replace(state_labels[i], "_" => "")
+        i += 1
+    end
+end
+
+
+function arrow_func(s, d, y)
+    if abs(y[s]-y[d]) == 1 || abs(s-d) == 1
+        return [0, 0]
+    else
+        return [20, 25]
     end
 end
