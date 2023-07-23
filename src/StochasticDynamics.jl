@@ -1,4 +1,4 @@
-
+export move!, get_return_times
 
 """
     move!(s, H)
@@ -29,19 +29,20 @@ Given an initial state `s_init` and the Hamiltonian `H`, the function performs r
 # Arguments
 - `s_init::Vector{<:Integer}`: initial state
 - `H::Hamiltonian`: Hamiltonian
+- `move_function!::Function`: function use to perform a single move
 - `num_returns::Integer`: desired total number of returns (i.e., `length(return_times)`)
 - `max_time::Real=Inf`: time limit after which the function stops (no time limit by default)
 
 # Returns
 - `return_times`: vector with return times (each return time is counted from the previous return)
 """
-function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian; num_returns::Integer, max_time::Real=Inf)
+function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian, move_function!::Function; num_returns::Integer, max_time::Real=Inf)
     t = 0
     tc = 0
     return_times = Int[]
     s = copy(s_init)
     while t ≤ max_time
-        move!(s, H)
+        move_function!(s, H)
         t += 1
         tc += 1
         # println(s)
@@ -49,9 +50,19 @@ function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian; num_returns
             append!(return_times, tc)
             tc = 0
         end
-        if length(return_times) ≥ num_returns
+        r = length(return_times)
+        if r % 1000 == 0
+            println("$r returns") 
+            flush(stdout)
+        end
+        if r ≥ num_returns
             return return_times
         end
     end
     return return_times
+end
+
+
+function distribution_of_return_times()
+    
 end
