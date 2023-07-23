@@ -49,14 +49,14 @@ function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian, move_functi
         if s == s_init
             append!(return_times, tc)
             tc = 0
-        end
-        r = length(return_times)
-        if r % 1000 == 0
-            println("$r returns") 
-            flush(stdout)
-        end
-        if r ≥ num_returns
-            return return_times
+            r = length(return_times)
+            if r % 1000 == 0
+                println("$r returns") 
+                flush(stdout)
+            end
+            if r ≥ num_returns
+                return return_times
+            end
         end
     end
     return return_times
