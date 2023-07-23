@@ -27,10 +27,10 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
 
     # We iterate over each state in the collection and search for states connected to it. Append these states to the collection.
     while count < length(states)
-        if (count % 100 == 0) || (count == length(states) - 1)
-            println("state: $count, found: $(length(states))")
-            flush(stdout)
-        end
+        # if (count % 100 == 0) || (count == length(states) - 1)
+        #     println("state: $count, found: $(length(states))")
+        #     flush(stdout)
+        # end
 
         state = states[count+1]
         for (coef, idx, flippable, flip) in H.H_terms
@@ -96,8 +96,36 @@ Explore the full Hilbert space of the model on `N_sites` with Hamiltonian `H`.
 """
 function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Bool=true)
     states_all = Vector{Vector{<:Integer}}[]
-    hams = []
+    hams = SparseMatrixCSC{Complex, Int64}[]
     for state_init in [collect(x) for x in product(fill([0:(H.dof_dim-1);], N_sites)...)]
+        if !any([state_init in states for states in states_all])
+            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
+            push!(states_all, states)
+            push!(hams, ham)
+        end
+    end
+    return states_all, hams
+end
+
+
+"""
+    explore_full_space(H, states_to_explore; construct_ham)
+
+Explore the Hilbert space of the model connected to `states_to_explore` with Hamiltonian `H`.
+
+# Arguments
+- `H::Hamiltonian`: Hamiltonian
+- `states_to_explore::Vector{Vector{<:Integer}}`: total number of sites
+- `construct_ham::Bool=true`: if true, construct the Hamiltonian (as a sparse matrix)
+
+# Returns
+- `hams`: vector of Hamiltonians as sparse csr matrices (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
+- `states_all`: vectors of vectors of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
+"""
+function explore_full_space(H::Hamiltonian, states_to_explore::Vector{Vector{<:Integer}}; construct_ham::Bool=true)
+    states_all = Vector{Vector{<:Integer}}[]
+    hams = []
+    for state_init in states_to_explore
         if !any([state_init in states for states in states_all])
             states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
             push!(states_all, states)
