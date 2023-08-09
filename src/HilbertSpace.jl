@@ -97,7 +97,8 @@ Explore the full Hilbert space of the model on `N_sites` with Hamiltonian `H`.
 function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Bool=true)
     states_all = Vector{Vector{<:Integer}}[]
     hams = SparseMatrixCSC{Complex, Int64}[]
-    for state_init in [collect(x) for x in product(fill([0:(H.dof_dim-1);], N_sites)...)]
+    for state_init_tup in product(fill([0:(H.dof_dim-1);], N_sites)...)
+        state_init = collect(state_init_tup)
         if !any([state_init in states for states in states_all])
             states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
             push!(states_all, states)
