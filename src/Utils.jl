@@ -1,4 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py
 
 
 """
@@ -167,4 +167,25 @@ function arrow_func(s, d, y)
     else
         return [20, 25]
     end
+end
+
+
+function serialize_py(foldername::AbstractString, filename::AbstractString, value)
+    println("Serializing $(filename)...")
+    flush(stdout)
+    serialize("$(foldername)/$(filename)", value)
+    println("   $(filename) serialized")
+    println("Converting $(filename) to python...")
+    flush(stdout)
+    if typeof(value) <: Dict
+        @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
+            pickle.dump(PyDict(Dict(Tuple.(keys(value)) .=> values(value))), f)
+        end
+    elseif typeof(value) <: Vector
+        @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
+            pickle.dump(PyObject(value), f)
+        end
+    end
+    println("   $(filename) pickled")
+    flush(stdout)
 end
