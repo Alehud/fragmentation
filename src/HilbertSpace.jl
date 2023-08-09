@@ -122,7 +122,7 @@ Explore the Hilbert space of the model connected to `states_to_explore` with Ham
 - `hams`: vector of Hamiltonians as sparse csr matrices (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
 - `states_all`: vectors of vectors of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
 """
-function explore_full_space(H::Hamiltonian, states_to_explore::Vector{Vector{<:Integer}}; construct_ham::Bool=true)
+function explore_full_space(H::Hamiltonian, states_to_explore::Vector{<:Vector{<:Integer}}; construct_ham::Bool=true)
     states_all = Vector{Vector{<:Integer}}[]
     hams = []
     for state_init in states_to_explore
