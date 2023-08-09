@@ -6,6 +6,10 @@ using Graphs
 using Random
 using SparseArrays
 using Combinatorics
+using PyCall
+using Serialization
+
+pickle = pyimport("pickle")
 
 include("Hamiltonians.jl")
 include("HilbertSpace.jl")
