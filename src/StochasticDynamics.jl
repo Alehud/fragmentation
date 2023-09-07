@@ -61,8 +61,3 @@ function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian, move_functi
     end
     return return_times
 end
-
-
-function distribution_of_return_times()
-    
-end
