@@ -33,7 +33,7 @@ end
 
 
 dof_dim = 3
-L = 12
+L = 5
 H_terms = Tuple[]
 for i in 1:(L-2)
     push!(H_terms, (1.0, [i, i+1, i+2], flippable, flip))
@@ -49,7 +49,7 @@ H = Hamiltonian(dof_dim, H_terms, check_hermitian=true)
 #     println(H_terms)
 # end
 
-s_init = Int8[2,1,1,1,0,0,0,0,0,0,0,0]
+s_init = Int8[2,1,1,0,0]
 println("s_init: $s_init")
 states, ham = explore_connected_states(s_init, H, construct_ham=true)
 println("$(length(states)) states found", )
@@ -64,7 +64,7 @@ rows, cols, mels = findnz(ham)
 # println("cols: $cols")
 # println("mels: $mels")
 
-# states_all, hams = explore_full_space(H, 8, construct_ham=true)
+states_all, hams = explore_full_space(H, L, construct_ham=true)
 # for (i, states) in enumerate(states_all)
 #     println(i, " ", states)
 # end
