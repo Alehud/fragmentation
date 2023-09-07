@@ -8,6 +8,7 @@ using SparseArrays
 using Combinatorics
 using PyCall
 using Serialization
+using LaTeXStrings
 
 pickle = pyimport("pickle")
 
