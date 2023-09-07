@@ -1,4 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py, int2label, int2str
 
 
 """
@@ -188,4 +188,49 @@ function serialize_py(foldername::AbstractString, filename::AbstractString, valu
     end
     println("   $(filename) pickled")
     flush(stdout)
+end
+
+
+function int2label(t::Integer)
+    if t == 0
+        t_str = "0"
+    else
+        ex = Int(floor(log10(t)))
+        if ex ≤ 2
+            t_str = string(t)
+        else
+            base = round(t / 10^(ex-2)) / 10^2
+            if base == 1.0
+                t_str = "10^{$(ex)}"
+            else
+                if isinteger(base)
+                    base = Int(base)
+                end
+                t_str = "$(base) \\cdot 10^{$(ex)}"
+            end
+        end
+    end
+    return t_str
+end
+
+function int2str(t::Integer)
+    if t == 0
+        t_str = "0"
+    else
+        ex = Int(floor(log10(t)))
+        if ex ≤ 2
+            t_str = string(t)
+        else
+            base = round(t / 10^(ex-2)) / 10^2
+            if base == 1.0
+                t_str = "10^$(ex)"
+            else
+                if isinteger(base)
+                    base = Int(base)
+                end
+                t_str = "$(base)*10^$(ex)"
+            end
+        end
+    end
+    return t_str
 end
