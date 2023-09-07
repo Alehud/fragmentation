@@ -4,8 +4,10 @@ using IterTools
 using SparseArrays
 using Serialization
 using Graphs
+using Luxor
 using Karnak
 using Colors
+using Plots
 
 
 bit_lines = 3
@@ -14,7 +16,7 @@ N_computations = factorial(2^bit_lines)
 
 
 # Construct the gate set (a vector with functions)
-gate_set = Any[bits::Integer -> bits]    # Identity gate
+gate_set = Function[bits::Integer -> bits]    # Identity gate
 # NOT gates
 for i in 0:bit_lines-1
     push!(gate_set, bits::Integer -> flip_bit(bits, i))
@@ -35,42 +37,34 @@ dof_dim = length(gate_set)
 
 
 # Construct a dictionary, where keys are computations (permutations) and values are vectors of states realizing this computation
-d = Dict{Vector{<:Integer}, Vector{Vector{<:Integer}}}()
-d_len = Dict{Vector{<:Integer}, Integer}()
-vacuum_states = Vector{<:Integer}[]
-for state in [collect(x) for x in product(fill([0:(dof_dim-1);], interaction_range)...)]
-    bits = [0:2^bit_lines-1;]
-    for s in state
+d = Dict{Vector{Int8}, Vector{Vector{Int8}}}()
+d_len = Dict{Vector{Int8}, Integer}()
+vacuum_states = Vector{Int8}[]
+for state in product(fill([0:(dof_dim-1);], interaction_range)...)
+    bits = Int8[0:2^bit_lines-1;]
+    for s in collect(state)
         bits = map(gate_set[s+1], bits)
     end
-    d[bits] = push!(get(d, bits, Vector{<:Integer}[]), state)
+    d[bits] = push!(get(d, bits, Vector{Int8}[]), collect(state))
     d_len[bits] = get(d_len, bits, 0) + 1
-    if bits == [0:2^bit_lines-1;]
-        push!(vacuum_states, state)
+    if bits == Int8[0:2^bit_lines-1;]
+        push!(vacuum_states, collect(state))
     end
 end
 # findfirst(states -> [0,0,0] in states, d)     # how to find a permutation realized by a specific state
-filter!(p -> length(p.second) > 1, d)   # Remove states that are not flippable
-flippable_states = collect(values(d))    # leave only values (states)
+# filter!(p -> length(p.second) > 1, d)   # Remove states that are not flippable
+# flippable_states = collect(values(d))    # leave only values (states)
 
-# open("data/circuit/vacuum_states_i$(interaction_range).txt", "w") do file
-#     println(file, "$(length(d[[0:7;]])) states connected to the vacuum") 
-#     for state in d[[0:7;]]
-#     println(file, state)
-#     end
-# end
-
-# serialize("data/circuit/dict_i$(interaction_range).dat", d)
-# serialize("data/circuit/dict_len_i$(interaction_range).dat", d_len)
-# serialize("data/circuit/vacuum_states_i$(interaction_range).dat", vacuum_states)
+serialize("data/circuit/d_i$(interaction_range).dat", d)
+serialize("data/circuit/d_len_i$(interaction_range).dat", d_len)
+serialize("data/circuit/vacuum_states_i$(interaction_range).dat", vacuum_states)
 
 
+# Construct Hamiltonian
 L = 5
 H_terms = Tuple[]
 for site in 1:(L-(interaction_range-1))
     for (computation, states) in d
-        # println(computation)
-        # println("     ", states)
         len = length(states)
         for i in 1:len, j in 1:len
             if i ≠ j
@@ -80,7 +74,6 @@ for site in 1:(L-(interaction_range-1))
     end
 end
 println(length(H_terms)÷2, " terms in the Hamiltonian")
-
 H = Hamiltonian(dof_dim, H_terms, check_hermitian=false);
 
 # s_init = fill(Int8(0), L)
@@ -98,36 +91,38 @@ H = Hamiltonian(dof_dim, H_terms, check_hermitian=false);
 
 
 
-d_i = deserialize("data/circuit/dict_i$(L).dat")
-gg = SimpleGraph{Int64}[]
-for (perm, states_symm_sector) in d_i
-    states_symm_sector_list, hams = explore_full_space(H, states_symm_sector; construct_ham=true)
-    g = SimpleGraph()
-    i = 0
-    for (states, ham) in zip(states_symm_sector_list, hams)
-        rows, cols, mels = findnz(ham);
-        rows .+= i
-        cols .+= i
-        edges = Edge.(collect(zip(rows, cols)))
-        g_temp = SimpleGraph(edges)
-        if isempty(edges)
-            add_vertices!(g, length(states))
-        else
-            g = union(g, g_temp)
-        end
-        i += length(states)
-    end
-    push!(gg, g)
-end
+# d = deserialize("data/circuit/d_i$(L).dat")
+# gg = SimpleGraph{Int64}[]
+# for (perm, states_symm_sector) in d
+#     # Connectivity within symmetry sector
+#     states_symm_sector_list, hams = explore_full_space(H, states_symm_sector; construct_ham=true)
+#     g = SimpleGraph()
+#     i = 0
+#     for (states, ham) in zip(states_symm_sector_list, hams)
+#         rows, cols, mels = findnz(ham);
+#         rows .+= i
+#         cols .+= i
+#         edges = Edge.(collect(zip(rows, cols)))
+#         g_temp = SimpleGraph(edges)
+#         if isempty(edges)
+#             add_vertices!(g, length(states))
+#         else
+#             g = union(g, g_temp)
+#         end
+#         i += length(states)
+#     end
+#     push!(gg, g)
+# end
 
 
 
-window_height = 10000
-window_width = 10000
+# window_height = 10000
+# window_width = 10000
+
 # y = [length(a_star(g, 1, v)) for v in vertices(g)]
 # pts = vcat([between.(O + (-window_width/2, window_height/2 - d*window_height/maximum(y)), O + (window_width/2, window_height/2 - d*window_height/maximum(y)), range(0, 1, length=count(i -> i == d, y)+2))[2:end-1] 
 #             for d in 0:maximum(y)]...)[invperm(sortperm(y))]
-# # Stress(initialpos = [(pt.x, pt.y) for pt in pts], iterations = 100)
+# Stress(initialpos = [(pt.x, pt.y) for pt in pts], iterations = 100)
 
 
 # @pdf begin
@@ -148,39 +143,40 @@ window_width = 10000
 #     edgecurvature = 30)
 # end window_height+100 window_width+100 "pics/circuit/circuit_$(L)x$(bit_lines)_i$(interaction_range)"
 
-colors = ["paleturquoise", "chartreuse", "thistle1", "pink",
-"gold", "wheat", "olivedrab1", "palegreen", "turquoise1",
-"lightgreen", "plum1", "plum", "violet", "hotpink"]
+# colors = ["paleturquoise", "chartreuse", "thistle1", "pink",
+# "gold", "wheat", "olivedrab1", "palegreen", "turquoise1",
+# "lightgreen", "plum1", "plum", "violet", "hotpink"]
 
-@pdf begin
-    background("grey10")
-    sethue("orange")
-    ng = length(gg)
-    N = convert(Int, ceil(sqrt(ng)))
-    tiles = Tiler(window_height, window_width, N, N)
-    setline(0.5)
-    for ((pos, n), (perm, _)) in zip(tiles, d_i)
-        @layer begin
-            n > ng && break
-            translate(pos)
-            sethue("gray")
-            bbox = BoundingBox(box(O, tiles.tilewidth, tiles.tileheight, :stroke))
-            if nv(gg[n]) == 1
-                layout = [Point(0.0,0.0)]
-            else
-                layout = spring
-            end
-            sethue(colors[mod1(n, end)])
-            drawgraph(gg[n], layout = layout,
-            boundingbox = bbox,
-            vertexshapesizes = 4,
-            vertexfillcolors = colorant"red",
-            edgestrokeweights = 1)
-            sethue("cyan")
-            text(string(perm), halign = :center, boxbottomcenter(bbox)-5)
-        end
-    end
-end window_height+100 window_width+100 "pics/circuit/circuit_full_$(L)x$(bit_lines)_i$(interaction_range)"
+# @pdf begin
+#     background("grey10")
+#     sethue("orange")
+#     ng = length(gg)
+#     N = convert(Int, ceil(sqrt(ng)))
+#     tiles = Tiler(window_height, window_width, N, N)
+#     setline(0.5)
+#     for ((pos, n), (perm, _)) in zip(tiles, d)
+#         @layer begin
+#             n > ng && break
+#             Karnak.translate(pos)
+#             sethue("gray")
+#             bbox = BoundingBox(box(O, tiles.tilewidth, tiles.tileheight, :stroke))
+#             if nv(gg[n]) == 1
+#                 layout = [Point(0.0,0.0)]
+#             else
+#                 layout = spring
+#             end
+#             sethue(colors[mod1(n, end)])
+#             drawgraph(gg[n], layout = layout,
+#             boundingbox = bbox,
+#             vertexshapesizes = 4,
+#             vertexfillcolors = colorant"red",
+#             edgestrokeweights = 1)
+#             sethue("cyan")
+#             fontsize(14)
+#             Karnak.text(string(perm, "           Κ = ", d_comp[perm]), halign = :center, boxbottomcenter(bbox)-5)
+#         end
+#     end
+# end window_height+100 window_width+100 "pics/circuit/circuit_full_$(L)x$(bit_lines)_i$(interaction_range)"
 
 # @pdf begin
 #     background("grey10")
@@ -191,5 +187,3 @@ end window_height+100 window_width+100 "pics/circuit/circuit_full_$(L)x$(bit_lin
 #     vertexfillcolors = colorant"red",
 #     edgestrokeweights = 2)
 # end window_height+100 window_width+100 "pics/circuit/circuit_$(L)x$(bit_lines)_i$(interaction_range)"
-
-
