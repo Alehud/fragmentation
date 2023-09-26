@@ -228,7 +228,7 @@ function int2str(t::Integer)
                 if isinteger(base)
                     base = Int(base)
                 end
-                t_str = "$(base)*10^$(ex)"
+                t_str = "$(base)p10^$(ex)"
             end
         end
     end
