@@ -2,11 +2,7 @@ include("src/Fragmentation.jl")
 using .Fragmentation
 using SparseArrays
 using Serialization
-using Plots
-using Colors
-using LaTeXStrings
 using Statistics
-using Polynomials
 
 
 function thermalize!(state::Vector{Int8}; n_layers::Integer, interaction_range::Integer, generator_set::Vector{Matrix{Union{Int64, Rational{Int64}}}}, d::Dict{Matrix{Union{Rational{Int64}, Int64}}, Vector{Vector{Int8}}})
@@ -68,25 +64,38 @@ b = Int64[2 0; 0 1]
 b̄ = [1//2 0; 0 1]
 generator_set = Matrix{Union{Int64, Rational{Int64}}}[e, a, b, ā, b̄]
 
-L = 120
-n = L ÷ 10
+
+# L_list = [45:5:130;]
+# n_waves_list = [1:5;]
+# t_meas_list = [1, 3, 5, 10, 30, 50, 100, 300, 10^3, 3*10^3]
+# params = [(n_waves, t_meas) for n_waves in n_waves_list, t_meas in t_meas_list]
+
+# L = L_list[parse(Int, ARGS[1])]
+# n_waves, t_meas = params[parse(Int, ARGS[1])]
+
+L = 180
+n = 8
+n_waves = 3
 interaction_range = 3
 
 d = deserialize("data/fragile/d_i$(interaction_range).dat")
 
 t_therm = 0
-t_meas = 10^5
+t_meas = 300
 
 experiments = 1
 tt = Int64[]
 exp_vals_all = Vector{Vector{Float64}}[]
 exp_vals_sq_av_all = Vector{Float64}[]
 
+println(" L = $(L) \n n = $n \n n_waves = $(n_waves) \n t_meas = $(t_meas) \n experiments = $(experiments) \n")
+
 for e in 1:experiments
     println("Experiment: $e")
     flush(stdout)
 
-    state = Int8[fill(2, n); 1; fill(4, n); 3; fill(2, n); 3; fill(4, n); 1]
+    state = repeat(Int8[fill(2, n); 1; fill(4, n); 3; fill(2, n); 3; fill(4, n); 1], n_waves)
+
     while length(state) < L
         insert!(state, rand(1:length(state)), 0)
     end
@@ -96,6 +105,8 @@ for e in 1:experiments
 
     exp_vals = Vector{Float64}[]
     t = 1
+    t_stop = 0
+    therm_flag = false
     while true
         println("t = $t")
         flush(stdout)
@@ -103,10 +114,20 @@ for e in 1:experiments
         if t_therm > 0
             thermalize!(state, n_layers=t_therm, interaction_range=interaction_range, generator_set=generator_set, d=d)
         end
-        if t > 100
+        if t > 5000
+            push!(tt, -1)
             break
         end
-        # if sum(exp_vals[end].^2) ≤ sum(exp_vals[1].^2)/10
+        # if therm_flag == false
+        #     if sum(exp_vals[end].^2) ≤ sum(exp_vals[1].^2) * 0.15
+        #         push!(tt, t*(t_meas + t_therm))
+        #         therm_flag = true
+        #     end
+        # end
+        # if therm_flag
+        #     t_stop += 1
+        # end
+        # if t_stop ≥ 50
         #     break
         # end
         t += 1
@@ -118,12 +139,11 @@ for e in 1:experiments
     # if isnothing(t)
     #     t = n_cycles
     # end
-    push!(tt, t*(t_meas + t_therm))
     push!(exp_vals_all, exp_vals)
     # push!(exp_vals_sq_av_all, exp_vals_sqr_av)
 end
 
-serialize("data/fragile/bs_L$(L)_n$(n)_$(int2str(t_therm))_$(int2str(t_meas)).dat", 
+serialize("data/fragile/bs_L$(L)_n$(n)/bs_L$(L)_n$(n)_w$(n_waves)_$(int2str(t_meas)).dat", 
             Dict("exp_vals_all" => exp_vals_all,
                  "L" => L,
                  "n" => n,
@@ -131,5 +151,6 @@ serialize("data/fragile/bs_L$(L)_n$(n)_$(int2str(t_therm))_$(int2str(t_meas)).da
                  "t_therm" => t_therm,
                  "t_meas" => t_meas,
                  "experiments" => experiments,
-                 "tt" => tt))
+                 "tt" => tt,
+                 "n_waves" => n_waves))
 
