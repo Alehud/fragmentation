@@ -1,4 +1,5 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py, int2label, int2str
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py, int2label, int2str, mymod, plaquette_idx, 
+row_idx, column_idx, draw_grid, issubarray
 
 
 """
@@ -233,4 +234,62 @@ function int2str(t::Integer)
         end
     end
     return t_str
+end
+
+
+function mymod(a::Integer, n::Integer)
+    return mod(a-1, n) + 1
+end
+
+function plaquette_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
+    return Int64[2((row-1)*Lx + column-1) + 1, 2((row-1)*Lx + column-1) + 2, 2((mymod(row+1, Ly)-1)*Lx + column-1) + 1, 2((row-1)*Lx + mymod(column+1,Lx)-1) + 2]
+end
+
+# function star_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
+#     return Int64[2((row-1)*Lx + column-1) + 1, 2((row-1)*Lx + column-1) + 2, 2((mymod(row+1, Ly)-1)*Lx + column-1) + 1, 2((row-1)*Lx + mymod(column+1,Lx)-1) + 2]
+# end
+
+function row_idx(row::Integer; Lx::Integer)
+    return Int64[2(row-1)*Lx + 1:2:2(row*Lx -1) + 1;]
+end
+
+function column_idx(column::Integer; Lx::Integer, Ly::Integer)
+    return Int64[2column:2Lx:2((Ly-1)*Lx + column-1) + 2;]
+end
+
+function draw_grid(state::Vector{Int8}; Lx::Integer, Ly::Integer, legend::Union{Dict, Nothing}=nothing)
+    if !isnothing(legend)
+        s = replace(state, legend...)
+    else
+        s = state
+    end
+    for y in 0:Ly-1
+        for x in 0:Lx-1
+            print("+--$(s[2x+1 + 2y*Lx])--")
+        end
+        println("+")
+        for x in 1:Lx
+            print("|     ")
+        end
+        println("|")
+        for x in 0:Lx-1
+            print("$(s[2x+2 + 2y*Lx])     ")
+        end
+        println("$(s[2 + 2y*Lx])")
+        for x in 1:Lx
+            print("|     ")
+        end
+        println("|")
+    end
+    for x in 0:Lx-1
+        print("+--$(s[2x+1])--")
+    end
+    println("+")
+end
+
+
+function issubarray(needle, haystack)
+    getView(vec::Vector{Int8}, i::Integer, len::Integer) = view(vec, i:i+len-1)
+    ithview(i::Integer) = getView(haystack, i, length(needle))
+    return any(i -> ithview(i) == needle, 1:length(haystack)-length(needle)+1)
 end
