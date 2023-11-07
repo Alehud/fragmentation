@@ -2,7 +2,7 @@ export explore_connected_states, explore_full_space
 
 
 """
-    explore_connected_states(s_init, H, N_sites, check_hermitian, return_ham)
+    explore_connected_states(s_init, H; construct_ham, check_nonzero, verbose, print_step)
 
 Given an initial state `s_init` and the Hamiltonian `H`, the function iteratively explores the Hilbert space that is connected to the initial state,
 and returns the Hamiltonian of this connected subspace, as well as its basis states.
@@ -11,13 +11,15 @@ and returns the Hamiltonian of this connected subspace, as well as its basis sta
 - `s_init::Vector{<:Integer}`: initial state
 - `H::Hamiltonian`: Hamiltonian
 - `construct_ham::Bool=true`: if true, construct the Hamiltonian (as a sparse matrix)
-- `check_nonzero::Bool=true`: if true, check for zero matrix elements and delete them after the Hamiltonian is constructed
+- `check_nonzero::Bool=false`: if true, check for zero matrix elements and delete them after the Hamiltonian is constructed
+- `verbose::Bool=true`: prints the progress if true
+- `print_step::Integer=100`: print the progress after every `print_step` states are checked
 
 # Returns
 - `states`: vector of basis states of the connected subspace of the Hilbert space. In this basis ham is written.
 - `ham`: Hamiltonian as a sparse csr matrix (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
 """
-function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; construct_ham::Bool=true, check_nonzero::Bool=false)
+function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; construct_ham::Bool=true, check_nonzero::Bool=false, verbose::Bool=true, print_step::Integer=100)
     # Create a collection of states. At first, only s_init is in the collection.
     states = [s_init]
     count = 0
@@ -25,12 +27,18 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
     cols = Int[]
     mels = Complex[]
 
+    # ## DELETE LATER
+    # break_flag = false
+    # ##
+
     # We iterate over each state in the collection and search for states connected to it. Append these states to the collection.
     while count < length(states)
-        # if (count % 100 == 0) || (count == length(states) - 1)
-        #     println("state: $count, found: $(length(states))")
-        #     flush(stdout)
-        # end
+        if verbose
+            if (count % print_step == 0) || (count == length(states) - 1)
+                println("state: $count, found: $(length(states))")
+                flush(stdout)
+            end
+        end
 
         state = states[count+1]
         for (coef, idx, flippable, flip) in H.H_terms
@@ -55,9 +63,25 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
                     push!(cols, ind)
                     push!(mels, coef)
                 end
+
+                # ## DELETE LATER
+                # if state_new == fill(Int8(0), length(s_init))
+                #     println("Target state found.")
+                #     flush(stdout)
+                #     break_flag = true
+                #     break
+                # end
+                # ##
             end
         end
         count += 1
+
+        # ## DELETE LATER
+        # if break_flag
+        #     break
+        # end
+        # ##
+
     end
 
     if construct_ham
@@ -100,7 +124,7 @@ function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Boo
     for state_init_tup in product(fill([0:(H.dof_dim-1);], N_sites)...)
         state_init = collect(state_init_tup)
         if !any([state_init in states for states in states_all])
-            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
+            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham, verbose=false)
             push!(states_all, states)
             push!(hams, ham)
         end
@@ -128,7 +152,7 @@ function explore_full_space(H::Hamiltonian, states_to_explore::Vector{<:Vector{<
     hams = []
     for state_init in states_to_explore
         if !any([state_init in states for states in states_all])
-            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham)
+            states, ham = explore_connected_states(state_init, H, construct_ham=construct_ham, verbose=false)
             push!(states_all, states)
             push!(hams, ham)
         end
