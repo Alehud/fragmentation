@@ -16,6 +16,7 @@ include("Hamiltonians.jl")
 include("HilbertSpace.jl")
 include("EntanglementEntropy.jl")
 include("StochasticDynamics.jl")
+include("GroupModels.jl")
 include("Utils.jl")
 
 end
