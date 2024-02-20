@@ -4,7 +4,7 @@ using IterTools
 using SparseArrays
 using Serialization
 
-# 0 = vacuum
+# 0 = e
 # 1 = a
 # 2 = b
 # 3 = a^(-1)
@@ -15,33 +15,28 @@ a = Int64[1 1; 0 1]
 ā = Int64[1 -1; 0 1]
 b = Int64[2 0; 0 1]
 b̄ = [1//2 0; 0 1]
-
-interaction_range = 3
-
-# Construct the generator set (a vector with matrices)
-generator_set = Matrix{Union{Int64, Rational{Int64}}}[e, a, b, ā, b̄]
-dof_dim = length(generator_set)
+generator_set = Matrix{Rational{Int64}}[e, a, b, ā, b̄]
 
 
-# Construct a dictionary, where keys are group elements and values are vectors of words corresponding to these group elements
-d = Dict{Matrix{Union{Int64, Rational{Int64}}}, Vector{Vector{Int8}}}()
-d_len = Dict{Matrix{Union{Int64, Rational{Int64}}}, Integer}()
-identity_states = Vector{Int8}[]
-for state in product(fill([0:(dof_dim-1);], interaction_range)...)
-    group_elem = copy(e)
-    for s in collect(state)
-        group_elem *= generator_set[s+1]
-    end
-    d[group_elem] = push!(get(d, group_elem, Vector{Int8}[]), collect(state))
-    d_len[group_elem] = get(d_len, group_elem, 0) + 1
-    if group_elem == e
-        push!(identity_states, collect(state))
-    end
-end
-# findfirst(states -> [0,0,0] in states, d)     # how to find a permutation realized by a specific state
-# filter!(p -> length(p.second) > 1, d)   # Remove states that are not flippable
-# flippable_states = collect(values(d))    # leave only values (states)
+L = 5
+# Construct dictionaries through exact iteration through states
+d_len, d, identity_states = construct_dict(L, generator_set, calc_group_elem_representation)
+serialize("data/bs/d_L$(L).dat", d)
+serialize("data/bs/d_len_L$(L).dat", d_len)
+serialize("data/bs/identity_states_L$(L).dat", identity_states)
+d_noid_len, d_noid, _ = construct_dict(L, generator_set, calc_group_elem_representation; 
+                                        omit_identity_letters=true, no_identity_states=true)
+serialize("data/bs/d_noid_L$(L).dat", d_noid)
+serialize("data/bs/d_noid_len_L$(L).dat", d_noid_len)
 
-serialize("data/fragile/d_i$(interaction_range).dat", d)
-serialize("data/fragile/d_len_i$(interaction_range).dat", d_len)
-serialize("data/fragile/identity_states_i$(interaction_range).dat", identity_states)
+
+
+# Construct d_len by appending one site at a time
+construct_d_len_iteratively((12, 27), deserialize("data/bs/d_len_L1.dat"), (g1, g2) -> g1*g2, "data/bs/d_len")
+
+# Construct d_len by appending one site at a time
+construct_d_len_iteratively((12, 27), deserialize("data/bs/d_noid_len_L1.dat"), (g1, g2) -> g1*g2, "data/bs/d_noid_len")
+
+
+
+

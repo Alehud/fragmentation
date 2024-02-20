@@ -18,7 +18,7 @@ using Plots
 interaction_range = 3
 dof_dim = 5
 
-d = deserialize("data/fragile/d_i$(interaction_range).dat")
+d = deserialize("data/bs/d_L$(interaction_range).dat")
 
 # Construct Hamiltonian
 L = 10
@@ -61,7 +61,7 @@ end
 println(state_labels[v_target])
 
 
-# d = deserialize("data/fragile/d_i$(L).dat")
+# d = deserialize("data/bs/d_L$(L).dat")
 # gg = SimpleGraph{Int64}[]
 # legend = ["0" => "_", "1" => "a", "2" => "b", "3" => "ā", "4" => "b̄"]
 # for (perm, states_symm_sector) in d
@@ -125,4 +125,4 @@ println(state_labels[v_target])
 #             Karnak.text(string(Float64.(perm[2,:]))[2:end-1], halign = :center, boxbottomcenter(bbox) - (0, 5))
 #         end
 #     end
-# end window_height+100 window_width+100 "pics/fragile/connectivity_full_merged_L$(L)_i$(interaction_range)"
+# end window_height+100 window_width+100 "pics/bs/connectivity_full_merged_L$(L)_i$(interaction_range)"
