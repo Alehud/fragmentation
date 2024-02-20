@@ -248,10 +248,12 @@ function isreducible(word::Vector{Int8}, relations::Vector{Vector{Int8}}, invers
         end 
     end
     H = Hamiltonian(length(keys(inverses)), H_terms, check_hermitian=true);
-    states, _ = explore_connected_states(word, H; construct_ham=false)
+    states, _ = explore_connected_states(word, H; construct_ham=false, verbose=false)
     for state in states
-        if isreducible(state, relations, inverses)
-            return true
+        for relation in relations
+            if isreducible(state, relation, inverses)
+                return true
+            end
         end
     end
     return false
