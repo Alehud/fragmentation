@@ -141,11 +141,11 @@ Create string labels out of the vector with states.
 # Returns
 - `Vector{String}`: string labels
 """
-function vertex_labels(states::Vector{<:Vector{<:Integer}}, legend::Vector{Pair{String, String}} = nothing)
+function vertex_labels(states::Vector{<:Vector{<:Integer}}, legend::Vector{<:Pair{<:Integer, String}} = nothing)
     if isnothing(legend)
         return [join(string.(state)) for state in states]
     else
-        return [replace(join(string.(state)), legend...) for state in states]
+        return [join(replace(state, legend...)) for state in states]
     end
 end
 
@@ -239,6 +239,10 @@ end
 
 function mymod(a::Integer, n::Integer)
     return mod(a-1, n) + 1
+end
+
+function mymod(v::Vector{<:Integer}, n::Integer)
+    return (a -> mymod(a, n)).(v)
 end
 
 function plaquette_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
