@@ -64,7 +64,7 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
                     push!(mels, coef)
                 end
 
-                # ## DELETE LATER
+                # ## IMPLEMENT TARGET STATE
                 # if state_new == fill(Int8(0), length(s_init))
                 #     println("Target state found.")
                 #     flush(stdout)
@@ -76,7 +76,7 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
         end
         count += 1
 
-        # ## DELETE LATER
+        # ## IMPLEMENT TARGET STATE
         # if break_flag
         #     break
         # end
