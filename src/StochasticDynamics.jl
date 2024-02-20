@@ -1,24 +1,81 @@
-export move!, get_return_times
+export apply_single_ham_term!, classical_brickwork_update!, update!, get_return_times
 
 """
-    move!(s, H)
+apply_single_ham_term!(state, H)
 
-Given a state `s` and the Hamiltonian `H`, performs a random nearest neighbor move on the connectivity graph. The whole graph need not be known - the function tries to apply random moves from `H.H_terms`
-until it finds one that is applicable. Changes `s` in-place.
+Given a state `state` and the Hamiltonian `H`, applies a single random Hamiltonian term. I.e., performs a random nearest neighbor move on the connectivity graph. 
+The whole graph need not be known - the function tries to apply random moves from `H.H_terms` until it finds one that is applicable (or until `max_attempts` tries). 
+Changes `state` in-place.
 
 # Arguments
-- `s::Vector{<:Integer}`: state
+- `state::Vector{Int8}`: state
 - `H::Hamiltonian`: Hamiltonian
+- `max_attempts::Integer=1`: maximal number of attempts (the function will try at least length(H.H_terms) times)
 """
-function move!(s::Vector{<:Integer}, H::Hamiltonian)
-    while true
+function apply_single_ham_term!(state::Vector{Int8}, H::Hamiltonian; max_attempts::Integer=1)
+    for _ in 1:max(max_attempts, length(H.H_terms))
         _, idx, flippable, flip = rand(H.H_terms)
-        if flippable(s[idx])
-            s[idx] = flip(s[idx])
+        if flippable(state[idx])
+            state[idx] = flip(state[idx])
             break
         end
     end
 end
+
+
+"""
+classical_brickwork_update!(state, flippable, flip; interaction_range, pbc)
+
+Given a state `state`, performs a classical circuit update with gates arranged in a brickwork pattern. Each gate is of `interaction_range` size. 
+It checks if `flippable(state) == true`, and if yes, does `flip(state)`. The number of layers in the circuit is equal to `interaction_range`.
+`state` is changed in-place.
+
+# Arguments
+- `state::Vector{Int8}`: state
+- `flippable::Function`: function that checks if a local pattern is flippable
+- `flip::Function`: function that flips a local pattern
+- `interaction_range::Integer`: size of local updates
+- `pbc::Bool`: pbc/obc
+"""
+function classical_brickwork_update!(state::Vector{Int8}, flippable::Function, flip::Function; interaction_range::Integer, pbc::Bool)
+    L = length(state)
+    if interaction_range ≤ L
+        for layer in 1:interaction_range
+            idx = mymod([layer:layer+interaction_range-1;], L)
+            for _ in 1:(L - (!pbc)*(layer-1))÷interaction_range
+                if flippable(state[idx])
+                    state[idx] = flip(state[idx])
+                end
+                if pbc
+                    idx = mymod(idx .+ interaction_range, L)
+                else
+                    idx = idx .+ interaction_range
+                end
+            end
+        end
+    else
+        raise(error("Interaction range larger than the system size."))
+    end
+end
+
+
+"""
+update!(update_function!, num_updates=1)
+
+Performs an update `num_updates` times. The state is changed in-place.
+
+# Arguments
+- `update_function::Function`: function used to perform an update (must change a state in-place)
+- `num_updates::Integer=1`: number of times `update_function` is applied
+"""
+function update!(update_function!::Function, num_updates::Integer=1)
+    for _ in num_updates
+        update_function!()
+    end
+end
+
+
+
 
 
 """
@@ -61,3 +118,6 @@ function get_return_times(s_init::Vector{<:Integer}, H::Hamiltonian, move_functi
     end
     return return_times
 end
+
+
+
