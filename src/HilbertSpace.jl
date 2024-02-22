@@ -119,7 +119,7 @@ Explore the full Hilbert space of the model on `N_sites` with Hamiltonian `H`.
 - `hams`: vector of Hamiltonians as sparse csr matrices (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
 """
 function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Bool=true)
-    states_all = Vector{Vector{<:Integer}}[]
+    states_all = Vector{Vector{Int8}}[]
     hams = SparseMatrixCSC{Complex, Int64}[]
     for state_init_tup in product(fill([0:(H.dof_dim-1);], N_sites)...)
         state_init = collect(state_init_tup)
@@ -148,7 +148,7 @@ Explore the Hilbert space of the model connected to `states_to_explore` with Ham
 - `hams`: vector of Hamiltonians as sparse csr matrices (i.e., for each non-zero matrix element, it stores its row number, column nimber and the value of the element)
 """
 function explore_full_space(H::Hamiltonian, states_to_explore::Vector{<:Vector{<:Integer}}; construct_ham::Bool=true)
-    states_all = Vector{Vector{<:Integer}}[]
+    states_all = Vector{Vector{Int8}}[]
     hams = []
     for state_init in states_to_explore
         if !any([state_init in states for states in states_all])
