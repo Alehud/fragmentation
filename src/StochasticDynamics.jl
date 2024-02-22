@@ -65,13 +65,35 @@ update!(update_function!, num_updates=1)
 Performs an update `num_updates` times. The state is changed in-place.
 
 # Arguments
-- `update_function::Function`: function used to perform an update (must change a state in-place)
+- `update_function!::Function`: function used to perform an update (must change a state in-place)
 - `num_updates::Integer=1`: number of times `update_function` is applied
 """
 function update!(update_function!::Function, num_updates::Integer=1)
     for _ in num_updates
         update_function!()
     end
+end
+
+
+"""
+measure_time_average_and_update!(state; num_samples, measurement_function, update_function!, num_updates_between_measurements=1)
+
+Performs a time-averaged measurement over `num_samples` samples using `measurement_function`. The updates are performed using `update_function`, with `num_updates_between_measurements` updates between two consecutive collected samples.
+
+# Arguments
+- `state::Vector{Int8}`: state
+- `num_samples::Integer`: number of measurement samples
+- `measurement_function::Function`: function used to perform a measurement
+- `update_function!::Function`: function used to perform an update (must change a state in-place)
+- `num_updates_between_measurements::Integer=1`: number of updates between two measurements
+"""
+function measure_time_average_and_update!(state::Vector{Int8}; num_samples::Integer, measurement_function::Function, update_function!::Function, num_updates_between_measurements::Integer=1)
+    observable_sum = measurement_function(state)
+    for _ in 1:num_samples
+        update!(update_function!, num_updates_between_measurements)
+        observable_sum += measurement_function(state)
+    end
+    return observable_sum / num_samples
 end
 
 
