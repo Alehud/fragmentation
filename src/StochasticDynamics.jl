@@ -1,4 +1,4 @@
-export apply_single_ham_term!, classical_brickwork_update!, update!, get_return_times
+export apply_single_ham_term!, classical_brickwork_update!, update!, measure_time_average_and_update!, get_return_times
 
 """
 apply_single_ham_term!(state, H)
