@@ -41,7 +41,8 @@ function classical_brickwork_update!(state::Vector{Int8}, flippable::Function, f
     L = length(state)
     if interaction_range ≤ L
         for layer in 1:interaction_range
-            idx = mymod([layer:layer+interaction_range-1;], L)
+            start_site = rand(1:L)
+            idx = mymod([start_site:start_site+interaction_range-1;], L)
             for _ in 1:(L - (!pbc)*(layer-1))÷interaction_range
                 if flippable(state[idx])
                     state[idx] = flip(state[idx])
@@ -74,6 +75,9 @@ Performs a time-averaged measurement over `num_samples` samples using `measureme
 """
 function measure_time_average_and_update!(state::Vector{Int8}; num_samples::Integer, measurement_function::Function, update_function::Function, num_updates_between_measurements::Integer=1)
     observable_sum = measurement_function(state)
+    for _ in 1:num_updates_between_measurements
+        update_function(state)
+    end
     for _ in 1:(num_samples-1)
         for _ in 1:num_updates_between_measurements
             update_function(state)
