@@ -1,4 +1,4 @@
-include("src/Fragmentation.jl")
+include("../src/Fragmentation.jl")
 using .Fragmentation
 using SparseArrays
 using Serialization

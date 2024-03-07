@@ -113,14 +113,14 @@ end
 # 2 - spin-up
 
 dof_dim = 3
-pbc = true
+pbc = false
 
-nz = [2, 3, 4, 3]
-s_init = alternating_state(nz)
+nz = [2, 2, 2]
+s_init = semipositive_state(nz)
 println("s_init: $(s_init)")
-println("Transfer matrix approach: $(num_states_T_alternating(nz, pbc))")
+# println("Transfer matrix approach: $(num_states_T_alternating(nz, pbc))")
 
-println(prod(nz) + nz[1]*nz[2] + nz[2]*nz[3] + nz[3]*nz[4] + nz[4]*nz[1] + 1 + 1)
+# println(prod(nz) + nz[1]*nz[2] + nz[2]*nz[3] + nz[3]*nz[4] + nz[4]*nz[1] + 1 + 1)
 
 
 # Construct Hamiltonian
@@ -170,4 +170,18 @@ for s_init in product(fill(Int8[0,1,2], L)...)
     # if !flag
     #     println(s_init)
     # end
+end
+
+
+for state_init in product(fill(Int8[0,1,2], L)...)
+    s_init = collect(state_init)
+    states, ham = explore_connected_states(s_init, H, construct_ham=false, verbose=false);
+    for state in product(fill(Int8[0,1,2], L)...)
+        s = collect(state)
+        if charge(s) == charge(s_init)
+            if !(s in states)
+                i += 1
+            end
+        end
+    end
 end

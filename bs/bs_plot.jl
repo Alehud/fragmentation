@@ -1,4 +1,4 @@
-include("src/Fragmentation.jl")
+include("../src/Fragmentation.jl")
 using .Fragmentation
 using SparseArrays
 using Serialization
@@ -57,7 +57,7 @@ data = deserialize("data/bs/bs_b_wave_a_random/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
 # data = deserialize("data/bs/bs_random_words/thermalization/bs_L$(L)_10^3.dat")
 # data = deserialize("data/bs/bs_n$(n)_w$(w)/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
 e = 10
-exp_vals = data["exp_vals_all"][e]
+exp_vals = data["nb2_all"][e]
 L = data["L"]
 n = data["n"]
 # w = data["n_waves"]
@@ -513,8 +513,8 @@ savefig("pics/bs/bs_nb_L$(L).pdf")
 
 
 # Thermalization time vs L (n=L/10) for waves of b with random stuff in between
+medians = Float64[]
 means = Float64[]
-errors = Float64[]
 L_list = [50:10:130;]
 t_meas_list = [1,1,3,10,30,100,300,10^3,3*10^3]
 therm_fraction = 0.75
@@ -528,14 +528,14 @@ for (L, t_meas) in zip(L_list, t_meas_list)
     tt_smooth = tt_smooth[.!(isnothing.(tt_smooth))]*t_meas
     println("L: $(L), experiments thermalized: $(length(tt_smooth))")
     if length(tt_smooth) > 0
+        push!(medians, median(tt_smooth))
         push!(means, mean(tt_smooth))
-        push!(errors, std(tt_smooth))
     else
+        push!(medians, NaN)
         push!(means, NaN)
-        push!(errors, NaN)
     end
 end
-# linear_fit = Polynomials.fit(L_list, log2.(means), 1)
+# linear_fit = Polynomials.fit(L_list, log2.(medians), 1)
 # println(linear_fit.coeffs)
 plot(L_list,
     (x -> 9.314 * 2^(0.137x)).(L_list), 
@@ -546,7 +546,7 @@ plot(L_list,
     lw=2, 
     labelfontsize=22,
     tickfontsize=16)
-plot!(L_list, means, 
+plot!(L_list, medians, 
     # yerror=errors,
     seriestype=:scatter,
     markersize=6,
