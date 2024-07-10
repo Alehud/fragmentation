@@ -43,15 +43,14 @@ function classical_brickwork_update!(state::Vector{Int8}, flippable::Function, f
         for layer in 1:interaction_range
             start_site = rand(1:L)
             idx = mymod([start_site:start_site+interaction_range-1;], L)
-            for _ in 1:(L - (!pbc)*(layer-1))÷interaction_range
-                if flippable(state[idx])
-                    state[idx] = flip(state[idx])
-                end
-                if pbc
-                    idx = mymod(idx .+ interaction_range, L)
+            for _ in 1:(L÷interaction_range)
+                if !pbc && (1 in idx) && (L in idx)
                 else
-                    idx = idx .+ interaction_range
+                    if flippable(state[idx])
+                        state[idx] = flip(state[idx])
+                    end
                 end
+                idx = mymod(idx .+ interaction_range, L)
             end
         end
     else
