@@ -2,36 +2,39 @@ include("../src/Fragmentation.jl")
 using .Fragmentation
 using SparseArrays
 using Serialization
+using Statistics
 using Plots
 using Colors
 using LaTeXStrings
-using Statistics
 using Polynomials
 using Interpolations
 using RollingFunctions
 using StatsBase
+using Distributions
+using SpecialFunctions
+using LsqFit
 
 
 Plots.CURRENT_PLOT.nullableplot = nothing
 
 # Spatial distribution of <n_b>
-L = 120
-n = 12
-w = 1
-data = deserialize("data/bs/bs_one_runs/bs_L$(L)_n$(n)_one.dat")
+L = 100
+n = L
+T = 100
+# data = deserialize("bs/data/bs_bath/w_large_half/bs_L$(L)_n$(n)_T$(int2str(T)).dat")
+data = deserialize("bs/data/free_particles_bath/free_particles_bath_L$(L)_n$(n)_T$(int2str(T)).dat")
 e = 1
-exp_vals = data["exp_vals_all"][e]
+evals = data["evals_all"][e]
 L = data["L"]
 n = data["n"]
 # w = data["n_waves"]
-t_therm = data["t_therm"]
-t_meas = data["t_meas"]
-t_therm = data["tt"]
-ind_to_show = 1:length(exp_vals)
-plot([1:L;], exp_vals[ind_to_show], 
+tt = data["tt"]
+T = data["T"]
+ind_to_show = 100:101
+plot([1:L;], evals[ind_to_show], 
      lw=2, 
-     marker_z=[0:length(exp_vals[ind_to_show]);], 
-     palette=palette(:thermal, length(exp_vals[ind_to_show])), 
+     marker_z=[0:length(evals[ind_to_show]);], 
+     palette=palette(:thermal, length(evals[ind_to_show])), 
      legend=false,
      colorbar=true,
      colorbar_ticks=[0:20:100;],
@@ -41,43 +44,47 @@ plot([1:L;], exp_vals[ind_to_show],
      labelfontsize=22,
      tickfontsize=12,
      margin=0.3 * Plots.cm)
-title!(L"L=%$(L), n=%$(n), T=%$(int2label(t_meas))", titlefontsize=20)
+title!(L"L=%$(L), n=%$(n), T=%$(int2label(T))", titlefontsize=20)
 xlabel!(L"\mathrm{site} \enspace i")
 ylabel!(L"\left\langle n_{\mathtt{b},i} \right\rangle")
-savefig("pics/bs/bs_expval_longword_L$(L)_n$(n)_w$(w)_$(int2str(t_meas)).pdf")
+# savefig("pics/bs/bs_expval_longword_L$(L)_n$(n)_w$(w)_$(int2str(T)).pdf")
 
 
 # <n_b>^2 over time
-L = 120
-n = L ÷ 10
-w = 1
-# data = deserialize("data/bs/bs_one_runs/bs_L$(L)_n$(n)_one.dat")
-# data = deserialize("data/bs/bs_long_runs/bs_L$(L)_long_10^4.dat")
-data = deserialize("data/bs/bs_b_wave_a_random/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
-# data = deserialize("data/bs/bs_random_words/thermalization/bs_L$(L)_10^3.dat")
-# data = deserialize("data/bs/bs_n$(n)_w$(w)/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
-e = 10
-exp_vals = data["nb2_all"][e]
+L = 100
+n = L
+T = 20
+# w = 1
+# data = deserialize("bs/data/bs_one_runs/bs_L$(L)_n$(n)_one.dat")
+# data = deserialize("bs/data/bs_long_runs/bs_L$(L)_long_10^4.dat")
+# data = deserialize("bs/data/bs_b_wave_a_random/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
+# data = deserialize("bs/data/bs_random_words/thermalization/bs_L$(L)_10^3.dat")
+# data = deserialize("bs/data/bs_n$(n)_w$(w)/bs_L$(L)_n$(n)_w$(w)_10^3.dat")
+# data = deserialize("bs/data/bs_bath/all_b/bs_L$(L)_n$(n)_T$(int2str(T)).dat")
+data = deserialize("bs/data/free_particles_bath/free_particles_bath_L$(L)_n$(n)_T$(int2str(T)).dat")
+e = 1
+evals = data["evals_all"][e]
 L = data["L"]
 n = data["n"]
 # w = data["n_waves"]
-t_therm = data["t_therm"]
-t_meas = data["t_meas"]
-tt = data["tt"][e] / t_meas
-y_data = sum.((x -> x .^ 2).(exp_vals)) / L
+T = data["T"]
+tt = data["tt"][e] / T
+y_data = sum.((x -> x .^ 2).(evals)) / L
 roll_window = 30
 smooth_y_data = rollmean(y_data, roll_window)
 plot([1:length(y_data);], y_data, 
      legend=false, 
+     label=false,
      lw=3,
      labelfontsize=22,
      tickfontsize=12,
+    #  yaxis=:log,
+    #  xaxis=:log, 
      margin=0.3 * Plots.cm)
 # tt = findfirst(x -> x ≤ y_data[1]*0.1, y_data)
 # plot!([1:tt;], y_data[1]*(log2.((tt .- [1:tt;]) .+ 1) / log2(tt+1)), 
 #       legend=false, 
 #       lw=3)
-
 # nt = 1/2*log2.(2^(2n) * (1 .- [1:tt;]/tt) .+ [1:tt;]/tt)
 # nb2t = 4*nt.^3 / (L*(L/4-1))
 # plot!([1:tt;], nb2t * y_data[1]/nb2t[1], 
@@ -88,14 +95,24 @@ plot([1:length(y_data);], y_data,
 # plot!([y_data[1]*0.0175]; color=:goldenrod, seriestype = :hline)
 # plot!([y_data[1]*0.10]; color=:lightgreen, seriestype = :hline)
 # plot!([0.08]; color=:goldenrod, seriestype = :hline, lw=3)
-plot!([1:length(smooth_y_data);] .+ (roll_window÷2), smooth_y_data, legend=false, lw=2, color="red")
+plot!([1:length(smooth_y_data);] .+ (roll_window÷2), smooth_y_data, legend=false, label=false, lw=2, color="red")
+# fit_range = [11:1400;]
+# linear_fit = Polynomials.fit(log.(fit_range), log.(y_data[fit_range]), 1)
+# plot!(fit_range, exp(linear_fit.coeffs[1]) * (fit_range .^ (linear_fit.coeffs[2])), 
+#         color=:orange, lw=3, legend=:topright, legend_font=16, 
+#         label=L"%$(round(exp(linear_fit.coeffs[1]); digits=2)) \cdot (t/T)^{%$(round(linear_fit.coeffs[2]; digits=3))}")
+# fit_range = [1400:1900;]
+# linear_fit = Polynomials.fit(log.(fit_range), log.(y_data[fit_range]), 1)
+# plot!(fit_range, exp(linear_fit.coeffs[1]) * (fit_range .^ (linear_fit.coeffs[2])), 
+#         color=:red, lw=3, legend=:topright, legend_font=16, 
+#         label=L"%$(round(exp(linear_fit.coeffs[1]); digits=2)) \cdot (t/T)^{%$(round(linear_fit.coeffs[2]; digits=3))}")
 xlabel!(L"t/T")
 ylabel!(L"\overline{\left\langle n_{\mathtt{b}} \right\rangle^2}")
-title!(L"L=%$(L), n=%$(n), T=%$(int2label(t_meas))", titlefontsize=20)
+title!(L"L=%$(L), n=%$(n), T=%$(int2label(T))", titlefontsize=20)
 # title!(L"L=%$(L), T=%$(int2label(t_meas))," * "   initial state: ee...e", titlefontsize=16)
 # title!(L"L=%$(L), t_\mathrm{cycle}=%$(int2label(t_meas)), \mathrm{initial \enspace state: random \enspace} w \sim e", titlefontsize=14)
 # savefig("pics/bs/bs_nb2_eee_L$(L)_long_$(int2str(t_meas))")
-savefig("pics/bs/bs_nb2_L$(L)_n$(n)_$(int2str(t_meas)).pdf")
+# savefig("pics/bs/bs_nb2_L$(L)_n$(n)_$(int2str(t_meas)).pdf")
 
 
 # Thermalization time (1/10) vs system size L (for fixed n)
@@ -104,8 +121,8 @@ errors = Float64[]
 L_list = [24:26; 28:2:40; 45:5:120;]
 n = 5
 for L in L_list
-    data = deserialize("data/bs/bs_n$(n)_w1/bs_L$(L)_n$(n)_w1_30.dat")
-    # println(length(data["exp_vals_all"][1]))
+    data = deserialize("bs/data/bs_n$(n)_w1/bs_L$(L)_n$(n)_w1_30.dat")
+    # println(length(data["evals_all"][1]))
     tt = data["tt"]
     # From the long run calculation
     # if L == 50
@@ -148,15 +165,32 @@ savefig("pics/bs/bs_therm_time_n$(n).pdf")
 # Thermalization time (1/10) vs system size L (n = L/10)
 means = Float64[]
 errors = Float64[]
-for L in 60:10:130
-    data = deserialize("data/bs/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
+roll_window = 1
+therm_fraction = 0.1
+L_list = [60:10:130;]
+for L in L_list
+    println("L: $(L)")
+    if L ≤ 100
+        data = deserialize("bs/data/bs_L_div_n_10/tt_only/bs_L$(L)_n$(L÷10).dat")
+    else
+        data = deserialize("bs/data/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
+    end
+    t_meas = data["t_meas"]
     tt = data["tt"]
+    tt = tt[tt .≥ 0]
     push!(means, mean(tt))
     push!(errors, std(tt))
+    # nb2 = (evals -> sum.((x -> x .^ 2).(evals)) / L).(data["evals_all"])
+    # nb2 = nb2[length.(nb2) .> roll_window]
+    # smooth_nb2 = rollmean.(nb2, roll_window)
+    # tt_smooth = (y -> findfirst(x -> x ≤ y[1]*therm_fraction, y)).(smooth_nb2)
+    # tt_smooth = tt_smooth[.!(isnothing.(tt_smooth))]*t_meas
+    # push!(means, mean(tt_smooth))
+    # push!(errors, std(tt_smooth))
 end
-linear_fit = Polynomials.fit([60:10:130;], log.(means), 1)
+linear_fit = Polynomials.fit(L_list, log.(means), 1)
 println(linear_fit.coeffs)
-plot([60:10:130;], (x -> 0.67 * 2^(2x/10)).([60:10:130;]), 
+plot(L_list, (x -> 0.67 * 2^(2x/10)).(L_list), 
       label=L"0.67 \cdot 2^{2n}",
       color=:blue,
       legend=:bottomright,
@@ -164,14 +198,14 @@ plot([60:10:130;], (x -> 0.67 * 2^(2x/10)).([60:10:130;]),
       lw=2, 
       labelfontsize=22,
       tickfontsize=16)
-plot!([60:10:130;], means, yerror=errors,
+plot!(L_list, means, yerror=errors,
     seriestype=:scatter,
     markersize=6,
     markerstrokewidth=2,
     color=:red,
     yaxis=:log, 
     yticks=[10^3, 10^4, 10^5, 10^6, 10^7, 10^8], 
-    xticks=[60:10:130;],
+    xticks=L_list,
     label=false)
 xlabel!(L"$L$")
 ylabel!(L"$t_\mathrm{th}$")
@@ -188,9 +222,9 @@ w_list = [2, 3, 4]
 therm_fraction = 0.10
 roll_window = 30
 for w in w_list
-    data = deserialize("data/bs/bs_L$(L)_n$(n)/bs_L$(L)_n$(n)_w$(w)_300.dat")
+    data = deserialize("bs/bs/data_L$(L)_n$(n)/bs_L$(L)_n$(n)_w$(w)_300.dat")
     t_meas = data["t_meas"]
-    nb2 = (exp_vals -> sum.((x -> x .^ 2).(exp_vals)) / L).(data["exp_vals_all"])
+    nb2 = (evals -> sum.((x -> x .^ 2).(evals)) / L).(data["evals_all"])
     smooth_nb2 = rollmean.(nb2, roll_window)
     
     tt_smooth = (y -> findfirst(x -> x ≤ y[1]*therm_fraction, y)).(smooth_nb2)
@@ -230,8 +264,8 @@ t_meas_list = [30, 10^3, 3*10^3, 3*10^4]
 therm_fraction = 0.10
 roll_window = 30
 for (n, w, t_meas) in zip(n_list, w_list, t_meas_list)
-    data = deserialize("data/bs/bs_contrast/bs_L$(L)_n$(n)_w$(w)_$(int2str(t_meas)).dat")
-    nb2 = (exp_vals -> sum.((x -> x .^ 2).(exp_vals)) / L).(data["exp_vals_all"])
+    data = deserialize("bs/data/bs_contrast/bs_L$(L)_n$(n)_w$(w)_$(int2str(t_meas)).dat")
+    nb2 = (evals -> sum.((x -> x .^ 2).(evals)) / L).(data["evals_all"])
     smooth_nb2 = rollmean.(nb2, roll_window)
     
     tt_smooth = (y -> findfirst(x -> x ≤ y[1]*therm_fraction, y)).(smooth_nb2)
@@ -299,14 +333,14 @@ savefig("pics/bs/bs_expansion_length.pdf")
 
 # Animation
 L = 130
-data = deserialize("data/bs/bs_one_runs/bs_L$(L)_n$(L÷10)_one.dat")
-exp_vals = data["exp_vals_all"][1]
-nb2 = sum.((x -> x .^ 2).(exp_vals)) / L
+data = deserialize("bs/data/bs_one_runs/bs_L$(L)_n$(L÷10)_one.dat")
+evals = data["evals_all"][1]
+nb2 = sum.((x -> x .^ 2).(evals)) / L
 n = data["n"]
 t_therm = data["t_therm"]
 t_meas = data["t_meas"]
 anim = @animate for t in 1:100
-    p1 = plot([1:L;], exp_vals[t], legend=false, lw=4, labelfontsize=32, xlabel=L"\mathrm{site} \enspace i", ylabel=L"\left\langle n_{\mathtt{b},i} \right\rangle", ylims=(-0.5, 0.55),
+    p1 = plot([1:L;], evals[t], legend=false, lw=4, labelfontsize=32, xlabel=L"\mathrm{site} \enspace i", ylabel=L"\left\langle n_{\mathtt{b},i} \right\rangle", ylims=(-0.5, 0.55),
         title=L"t/T=%$(t),  T=%$(int2label(t_meas))", titlefont=24, tickfontsize=20)
     p2 = plot([1:t;], nb2[1:t], legend=false, lw=4, labelfontsize=32, xlabel=L"t/T", ylabel=L"\overline{\left\langle n_{\mathtt{b}} \right\rangle^2}",
         ylims=(0.0, 0.11), xlims=(0, 100), title=L"t/T=%$(t),  T=%$(int2label(t_meas))", titlefont=24, tickfontsize=20)
@@ -320,10 +354,10 @@ Plots.CURRENT_PLOT.nullableplot = nothing
 color_palette = palette(:rainbow, 8)
 i = 1
 for L in 60:10:130
-    data = deserialize("data/bs/bs_L$(L)_n$(L÷10)_one.dat")
-    exp_vals = data["exp_vals_all"][1]
+    data = deserialize("bs/data/bs_L$(L)_n$(L÷10)_one.dat")
+    evals = data["evals_all"][1]
     t_meas = data["t_meas"]
-    nb2 = sum.((x -> x .^ 2).(exp_vals)) / L
+    nb2 = sum.((x -> x .^ 2).(evals)) / L
     tc = t_meas * findfirst(x -> x ≤ nb2[1] / 10, nb2)
     println(tc)
     plot!([1:t_meas:length(nb2)*t_meas;] / tc, nb2, legend=:topright, color=color_palette[i], lw=2, label=L"L=%$(L)", labelfontsize=13)
@@ -341,11 +375,11 @@ Plots.CURRENT_PLOT.nullableplot = nothing
 color_palette = palette(:rainbow, 8)
 i = 1
 for L in [120]
-    data = deserialize("data/bs/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
+    data = deserialize("bs/data/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
     t_meas = data["t_meas"]
     experiments = data["experiments"]
-    exp_vals_all = data["exp_vals_all"]
-    nb2_all = (exp_vals -> sum.((x -> x .^ 2).(exp_vals)) / L).(exp_vals_all)
+    evals_all = data["evals_all"]
+    nb2_all = (evals -> sum.((x -> x .^ 2).(evals)) / L).(evals_all)
     tc_all = (nb2 -> t_meas * findfirst(x -> x ≤ nb2[1] / 10, nb2)).(nb2_all)
     t_all = [[1:length(nb2);] * t_meas / tc for (nb2, tc) in zip(nb2_all, tc_all)]
     lin_int_all = [linear_interpolation(t, nb) for (t, nb) in zip(t_all, nb2_all)]
@@ -365,13 +399,13 @@ savefig("pics/bs/bs_nb2_scaled_time")
 # <nb>^2 over normalized time for L=120, together with the analytic formula
 Plots.CURRENT_PLOT.nullableplot = nothing
 L = 120
-data = deserialize("data/bs/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
-data_one = deserialize("data/bs/bs_one_runs/bs_L$(L)_n$(L÷10)_one.dat")
+data = deserialize("bs/data/bs_L_div_n_10/bs_L$(L)_n$(L÷10).dat")
+data_one = deserialize("bs/data/bs_one_runs/bs_L$(L)_n$(L÷10)_one.dat")
 t_meas = data["t_meas"]
 experiments = data["experiments"]
-exp_vals_all = data["exp_vals_all"]
-nb2_all = (exp_vals -> sum.((x -> x .^ 2).(exp_vals)) / L).(exp_vals_all)
-nb2_one = sum.((x -> x .^ 2).(data_one["exp_vals_all"][1])) / L
+evals_all = data["evals_all"]
+nb2_all = (evals -> sum.((x -> x .^ 2).(evals)) / L).(evals_all)
+nb2_one = sum.((x -> x .^ 2).(data_one["evals_all"][1])) / L
 tc_all = (nb2 -> t_meas * findfirst(x -> x ≤ nb2[1] / 10, nb2)).(nb2_all)
 tc_one = data_one["t_meas"] * findfirst(x -> x ≤ nb2_one[1] / 10, nb2_one)
 t_all = [[1:length(nb2);] * t_meas / tc for (nb2, tc) in zip(nb2_all, tc_all)]
@@ -416,7 +450,7 @@ savefig("pics/bs/bs_nb2_scaled_time.pdf")
 
 
 # Plot the number of group elements vs L
-n_group_elems = deserialize("data/bs/n_group_elems.dat")
+n_group_elems = deserialize("bs/data/n_group_elems.dat")
 linear_fit = Polynomials.fit([5:length(n_group_elems);], log.(3, n_group_elems[5:end]), 1)
 coeffs = Float64.(linear_fit.coeffs)
 println(linear_fit)
@@ -431,7 +465,7 @@ savefig("pics/bs/bs_group_volume.pdf")
 
 
 # Plot the number of words in the identity sector vs L
-n_id_words = deserialize("data/bs/n_id_words.dat")
+n_id_words = deserialize("bs/data/n_id_words.dat")
 Ls = [1:length(n_id_words);]
 n_id_fraction = n_id_words ./ (5 .^ Ls)
 # linear_fit = Polynomials.fit(Ls, log.(n_id_words), 1)
@@ -463,7 +497,7 @@ N = 10^6
 t_meas = 10^3
 Plots.CURRENT_PLOT.nullableplot = nothing
 # colors = palette(:thermal, length(L_list))
-nb2 = deserialize("data/bs/bs_random_words/identity_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat")
+nb2 = deserialize("bs/data/bs_random_words/identity_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat")
 h = StatsBase.fit(Histogram, nb2, 0:0.00025:0.03)
 edg = collect(h.edges[1])
 x_data = (edg[1:end-1] .+ edg[2:end])/2
@@ -485,7 +519,7 @@ N = 10^5
 t_meas = 3*10^3
 Plots.CURRENT_PLOT.nullableplot = nothing
 # colors = palette(:thermal, length(L_list))
-nb2 = deserialize("data/bs/bs_random_words/0b_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat")
+nb2 = deserialize("bs/data/bs_random_words/0b_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat")
 h = StatsBase.fit(Histogram, nb2, 0:0.00025:0.03)
 edg = collect(h.edges[1])
 x_data = (edg[1:end-1] .+ edg[2:end])/2
@@ -520,7 +554,7 @@ t_meas_list = [1,1,3,10,30,100,300,10^3,3*10^3]
 therm_fraction = 0.75
 roll_window = 100
 for (L, t_meas) in zip(L_list, t_meas_list)
-    data = deserialize("data/bs/bs_b_wave_a_random/bs_L$(L)_n$(L÷10)_w1_$(int2str(t_meas)).dat")
+    data = deserialize("bs/data/bs_b_wave_a_random/bs_L$(L)_n$(L÷10)_w1_$(int2str(t_meas)).dat")
     nb2_all = data["nb2_all"]
     smooth_nb2 = rollmean.(nb2_all, roll_window)
     
@@ -571,7 +605,7 @@ L = 100
 t_meas = 100
 therm_fraction = 0.75
 roll_window = 100
-data = deserialize("data/bs/bs_b_wave_a_random/bs_L$(L)_n$(L÷10)_w1_$(int2str(t_meas))_new.dat")
+data = deserialize("bs/data/bs_b_wave_a_random/bs_L$(L)_n$(L÷10)_w1_$(int2str(t_meas))_new.dat")
 # experiments = [30,24,35,11,2,3,4,6,14,15,16,26]
 experiments = [2,36,18,50,12,4,23,44,1,3,14,21,30]
 exp_flat = [1,3,14,21,30]
@@ -603,5 +637,129 @@ xlabel!(L"t/T")
 ylabel!(L"\overline{\left\langle n_{\mathtt{b}} \right\rangle^2}")
 # title!(L"L=%$(L), n=%$(n), T=%$(int2label(t_meas))", titlefontsize=20)
 savefig("pics/bs/bs_nb2_b_wave_a_random.pdf")
+
+
+# Distribution of thermalization times for different L
+therm_fraction = 0.10
+roll_window = 1
+colors = [:red, :orange, :yellow, :green, :lightblue, :blue, :purple, :black]
+means = Float64[]
+errors = Float64[]
+Plots.CURRENT_PLOT.nullableplot = nothing
+for L in [60:10:110;]
+    n = L÷10
+    data = deserialize("bs/data/bs_L_div_n_10/tt_only/bs_L$(L)_n$(n).dat")
+    experiments = data["experiments"]
+    t_meas = data["t_meas"]
+    tt = data["tt"]
+    tt = tt[tt .≥ 0]
+    println("L: $(L), n: $(n), runs thermalized: $(length(tt))")
+    push!(means, mean(tt))
+    push!(errors, std(tt))
+    h = StatsBase.fit(Histogram, tt / mean(tt), 0:0.1:4.0)
+    edg = collect(h.edges[1])
+    x_data = (edg[1:end-1] .+ edg[2:end])/2
+    y_data = h.weights
+    plot!(x_data, y_data / experiments, seriestype=:line, 
+            # bins=50,
+            markershape=:circle,
+            markersize=4,
+            lw=2,
+            label=L"L=%$(L), \,%$(int2label(experiments))\, \mathrm{runs}", 
+            legend=:topright, 
+            minorgrid=true, 
+            legend_font=12, 
+            color=colors[n-5], 
+            # fill=true, 
+            # fillcolor=colors[n-5], 
+            # fillalpha=0.5, 
+            labelfontsize=16, 
+            tickfontsize=12, 
+            margin=0.3 * Plots.cm
+            )
+end
+xlims!((0.0, 4.0))
+xlabel!(L"t_\mathrm{th} / \overline{t_\mathrm{th}}")
+ylabel!("probability")
+# title!("300 runs")
+savefig("bs/pics/bs_t_th_distribution.pdf")
+
+
+### BS_BATH ###
+# Thermalization time (1/10) vs system size L (n = L, all-b word)
+means = Float64[]
+errors = Float64[]
+L_list = [80:5:150;]
+T_list = [Int(round(16*1.25^i)) for i in 0:length(L_list)-1]
+for (L, T) in zip(L_list, T_list)
+    println("L: $(L), T: $(T)")
+    data = deserialize("bs/data/bs_bath/all_b/tt_only/bs_L$(L)_n$(L)_T$(T).dat")
+    tt = data["tt"]
+    tt = tt[tt .≥ 0]
+    push!(means, mean(tt))
+    push!(errors, std(tt))
+end
+linear_fit = Polynomials.fit(log.(L_list), log.(means), 1)
+println(linear_fit.coeffs)
+# plot(L_list, (x -> exp(linear_fit.coeffs[1]) * exp(linear_fit.coeffs[2]*x)).(L_list), 
+#       label=L"%$(round(exp(linear_fit.coeffs[1]); digits=0)) \cdot \exp(%$(round(linear_fit.coeffs[2]; digits=3))L)",
+plot(L_list, exp(linear_fit.coeffs[1]) * (L_list .^ (linear_fit.coeffs[2])),
+      label=L"%$(round(exp(linear_fit.coeffs[1]); digits=2)) \cdot (t/T)^{%$(round(linear_fit.coeffs[2]; digits=3))}",
+      color=:blue,
+      legend=:bottomright,
+      legend_font=16,
+      lw=2, 
+      labelfontsize=22,
+      tickfontsize=16)
+plot!(L_list, means, yerror=errors,
+    seriestype=:scatter,
+    markersize=6,
+    markerstrokewidth=2,
+    color=:red,
+    yaxis=:log,
+    xaxis=:log, 
+    yticks=([10^4, 2*10^4, 3*10^4], [L"10^4", L"2\cdot 10^4", L"3\cdot 10^4"]), 
+    xticks=[10:20:370;],
+    label=false)
+xlabel!(L"$L$")
+ylabel!(L"$t_\mathrm{th}$")
+title!(L"b^n\, \mathrm{word}", titlefontsize=22)
+# savefig("pics/bs_bath/.pdf")
+
+
+# <n_b>^2 over time
+L = 500
+n = L
+T = 300
+# data = deserialize("bs/data/bs_bath/all_b/bs_L$(L)_n$(n)_T$(int2str(T)).dat")
+data = deserialize("bs/data/free_particles_bath/free_particles_bath_L$(L)_n$(n)_T$(int2str(T)).dat")
+experiments = data["experiments"]
+nb2_all = data["nb2_all"]
+T = data["T"]
+roll_window = 30
+y_data = mean(nb2_all)
+# smooth_y_data = rollmean(y_data, roll_window)
+plot([1:length(y_data);], y_data, 
+     legend=:bottomleft, 
+     label="averaged over $(experiments) runs",
+     lw=3,
+     labelfontsize=22,
+     tickfontsize=12,
+     yaxis=:log,
+     xaxis=:log, 
+     margin=0.3 * Plots.cm)
+# plot!([1:length(smooth_y_data);] .+ (roll_window÷2), smooth_y_data, legend=false, label=false, lw=2, color="red")
+# fit_range = [1:length(y_data);]
+# linear_fit = Polynomials.fit(log.(fit_range), log.(y_data[fit_range]), 1)
+# plot!(fit_range, exp(linear_fit.coeffs[1]) * (fit_range .^ (linear_fit.coeffs[2])), 
+#         color=:orange, lw=3, legend=:bottomleft, legend_font=12, 
+#         label=L"%$(round(exp(linear_fit.coeffs[1]); digits=2)) \cdot (t/T)^{%$(round(linear_fit.coeffs[2]; digits=3))}")
+xlabel!(L"t/T")
+ylabel!(L"\overline{\left\langle n_{\mathtt{b}} \right\rangle^2}")
+title!(L"L=%$(L), n=%$(n), T=%$(int2label(T))", titlefontsize=18)
+# savefig("pics/bs/bs_nb2_L$(L)_n$(n)_$(int2str(t_meas)).pdf")
+
+
+
 
 

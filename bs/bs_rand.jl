@@ -44,7 +44,7 @@ b̄ = [1//2 0; 0 1]
 generator_set = Matrix{Rational{Int64}}[e, a, b, ā, b̄]
 
 interaction_range = 3
-d = deserialize("data/bs/d_L$(interaction_range).dat")
+d = deserialize("bs/data/d/d_L$(interaction_range).dat")
 
 L_list = [50:10:150;]
 # t_meas_list = [1, 3, 10, 30, 100, 300, 3*10^3, 10^4, 3*10^4]
@@ -87,8 +87,8 @@ for i in 1:N
 end
 nb = nb / N
 
-# serialize("data/bs/bs_random_words/0b_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat", nb2)
-serialize("data/bs/bs_random_words/nb_id_sector/bs_nb_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat", nb)
+# serialize("bs/data/bs_random_words/0b_sector/bs_nb2_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat", nb2)
+serialize("bs/data/bs_random_words/nb_id_sector/bs_nb_random_words_L$(L)_N$(int2str(N))_$(int2str(t_meas)).dat", nb)
 
 
 

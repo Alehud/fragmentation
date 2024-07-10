@@ -104,12 +104,12 @@ flush(stdout)
 
 
 return_times = get_return_times(s_init, H, move!; num_returns=returns_per_day)
-serialize("data/bs/bs_return_times_L$(L)_$(length(return_times) ÷ 1000)k.dat", return_times)
+serialize("bs/data/bs_return_times_L$(L)_$(length(return_times) ÷ 1000)k.dat", return_times)
 
 
 
 L = 6
-return_times = deserialize("data/bs/bs_return_times_L$(L).dat")
+return_times = deserialize("bs/data/bs_return_times_L$(L).dat")
 h = StatsBase.fit(Histogram, return_times, nbins=50)
 edg = collect(h.edges[1])
 x_data = (edg[1:end-1] .+ edg[2:end])/2

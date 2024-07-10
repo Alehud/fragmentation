@@ -18,11 +18,11 @@ using Plots
 interaction_range = 3
 dof_dim = 5
 
-d = deserialize("data/bs/d_L$(interaction_range).dat")
+d = deserialize("bs/data/d/d_L$(interaction_range).dat")
 
 # Construct Hamiltonian
-L = 10
-H_terms = Tuple[]
+L = 9
+H_terms = Tuple{Real, Vector{<:Integer}, Function, Function}[]
 for site in 1:(L-(interaction_range-1))
     for (group_element, states) in d
         len = length(states)
@@ -37,8 +37,9 @@ println(length(H_terms)÷2, " terms in the Hamiltonian")
 H = Hamiltonian(dof_dim, H_terms, check_hermitian=false);
 
 
-n = 1
-s_init = Int8[fill(2, n); 1; fill(4, n); 3; fill(2, n); 3; fill(4, n); 1; fill(0, L - (4n+4))]
+# n = 1
+# s_init = Int8[fill(2, n); 1; fill(4, n); 3; fill(2, n); 3; fill(4, n); 1; fill(0, L - (4n+4))]
+s_init = fill(Int8(0), L)
 println("s_init: $s_init")
 states, ham = explore_connected_states(s_init, H, construct_ham=true);
 println("$(length(states)) states found", )
@@ -61,7 +62,7 @@ end
 println(state_labels[v_target])
 
 
-# d = deserialize("data/bs/d_L$(L).dat")
+# d = deserialize("bs/data/d/d_L$(L).dat")
 # gg = SimpleGraph{Int64}[]
 # legend = ["0" => "_", "1" => "a", "2" => "b", "3" => "ā", "4" => "b̄"]
 # for (perm, states_symm_sector) in d
