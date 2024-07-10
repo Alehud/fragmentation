@@ -15,7 +15,7 @@ struct Hamiltonian
     dof_dim::Integer
     H_terms::Vector{Tuple}
     
-    function Hamiltonian(dof_dim::Integer, H_terms::Vector{Tuple{Real, Vector{<:Integer}, Function, Function}}; check_hermitian::Bool = false, reduce_hamiltonian::Bool = false)
+    function Hamiltonian(dof_dim::Integer, H_terms::Vector{<:Tuple{Real, Vector{<:Integer}, Function, Function}}; check_hermitian::Bool = false, reduce_hamiltonian::Bool = false)
         for (coef, idx, flippable, flip) in H_terms
             if !(typeof(coef) <: Number)
                 raise(error("`coef` should be a real or complex number."))
