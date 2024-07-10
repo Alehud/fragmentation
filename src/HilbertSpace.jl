@@ -22,10 +22,11 @@ and returns the Hamiltonian of this connected subspace, as well as its basis sta
 function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; construct_ham::Bool=true, check_nonzero::Bool=false, verbose::Bool=true, print_step::Integer=100)
     # Create a collection of states. At first, only s_init is in the collection.
     states = [s_init]
+    seen_states = Set([s_init])
     count = 0
     rows = Int[]
     cols = Int[]
-    mels = Complex[]
+    mels = typeof(H.H_terms[1][1])[]
 
     # ## DELETE LATER
     # break_flag = false
@@ -33,11 +34,9 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
 
     # We iterate over each state in the collection and search for states connected to it. Append these states to the collection.
     while count < length(states)
-        if verbose
-            if (count % print_step == 0) || (count == length(states) - 1)
-                println("state: $count, found: $(length(states))")
-                flush(stdout)
-            end
+        if verbose && (count % print_step == 0 || count == length(states) - 1)
+            # println("state: $count, found: $(length(states))"); flush(stdout)
+            @info "state: $count, found: $(length(states))"
         end
 
         state = states[count+1]
@@ -46,9 +45,10 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
                 state_new = copy(state)
                 state_new[idx] = flip(state_new[idx])
                 # Check if we already have such a state in our collection
-                if !(state_new in states)
+                if state_new ∉ seen_states
                     # If not, then add it to the collection
                     push!(states, state_new)
+                    push!(seen_states, state_new)
                     if construct_ham
                         # Add the corresponding matrix element
                         push!(rows, count)
@@ -86,7 +86,7 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
 
     if construct_ham
         # Construct the Hamiltonian matrix
-        if length(mels) > 0
+        if !isempty(mels)
             # This sparse matrix construction will sum up coefficients with similar row and col
             # I.e., if row[i] == row[j] and col[i] == col[j], then the matrix element in the sparse matrix will be mel[i] + mel[j]
             ham = sparse(rows.+1, cols.+1, mels)
@@ -95,7 +95,7 @@ function explore_connected_states(s_init::Vector{<:Integer}, H::Hamiltonian; con
                 dropzeros!(ham)
             end
         else
-            ham = sparse(Int[], Int[], Complex[])
+            ham = sparse(Int[], Int[], typeof(H.H_terms[1][1])[])
         end
         return states, ham
     else
@@ -120,7 +120,7 @@ Explore the full Hilbert space of the model on `N_sites` with Hamiltonian `H`.
 """
 function explore_full_space(H::Hamiltonian, N_sites::Integer; construct_ham::Bool=true)
     states_all = Vector{Vector{Int8}}[]
-    hams = SparseMatrixCSC{Complex, Int64}[]
+    hams = Union{Nothing, SparseMatrixCSC{typeof(H.H_terms[1][1]), Int64}}[]
     for state_init_tup in product(fill([0:(H.dof_dim-1);], N_sites)...)
         state_init = collect(state_init_tup)
         if !any([state_init in states for states in states_all])
