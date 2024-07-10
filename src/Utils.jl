@@ -1,4 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, serialize_py, int2label, int2str, mymod, plaquette_idx, 
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, int2label, int2str, mymod, plaquette_idx, 
 row_idx, column_idx, draw_grid, issubarray
 
 
@@ -50,7 +50,7 @@ end
 """
     arr_to_int(a)
 
-Convert numpy boolean vector `a` of length `n` to an integer.
+Convert a boolean vector `a` of length `n` to an integer.
 
 # Arguments
 - `a::Vector{Bool}`: boolean vector
@@ -58,7 +58,7 @@ Convert numpy boolean vector `a` of length `n` to an integer.
 # Returns
 - `Integer`: an integer with the binary representation stored in the vector `a`
 """
-function arr2int(a::Vector{Bool})::Integer
+function arr2int(a::Vector{<:Integer})::Integer
     if length(a) > 63
         return sum([p*2^BigInt(i-1) for (i, p) in enumerate(a)])
     else
@@ -171,25 +171,25 @@ function arrow_func(s, d, y)
 end
 
 
-function serialize_py(foldername::AbstractString, filename::AbstractString, value)
-    println("Serializing $(filename)...")
-    flush(stdout)
-    serialize("$(foldername)/$(filename)", value)
-    println("   $(filename) serialized")
-    println("Converting $(filename) to python...")
-    flush(stdout)
-    if typeof(value) <: Dict
-        @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
-            pickle.dump(PyDict(Dict(Tuple.(keys(value)) .=> values(value))), f)
-        end
-    elseif typeof(value) <: Vector
-        @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
-            pickle.dump(PyObject(value), f)
-        end
-    end
-    println("   $(filename) pickled")
-    flush(stdout)
-end
+# function serialize_py(foldername::AbstractString, filename::AbstractString, value)
+#     println("Serializing $(filename)...")
+#     flush(stdout)
+#     serialize("$(foldername)/$(filename)", value)
+#     println("   $(filename) serialized")
+#     println("Converting $(filename) to python...")
+#     flush(stdout)
+#     if typeof(value) <: Dict
+#         @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
+#             pickle.dump(PyDict(Dict(Tuple.(keys(value)) .=> values(value))), f)
+#         end
+#     elseif typeof(value) <: Vector
+#         @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
+#             pickle.dump(PyObject(value), f)
+#         end
+#     end
+#     println("   $(filename) pickled")
+#     flush(stdout)
+# end
 
 
 function int2label(t::Integer)
