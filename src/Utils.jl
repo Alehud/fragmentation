@@ -1,5 +1,4 @@
-export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, int2label, int2str, mymod, plaquette_idx, 
-row_idx, column_idx, draw_grid, issubarray
+export lshift, rshift, arr2int, brint, flip_bit, get_bit, vertex_labels, remove_vacuum!, arrow_func, int2label, int2str, mymod, issubarray
 
 
 """
@@ -171,27 +170,6 @@ function arrow_func(s, d, y)
 end
 
 
-# function serialize_py(foldername::AbstractString, filename::AbstractString, value)
-#     println("Serializing $(filename)...")
-#     flush(stdout)
-#     serialize("$(foldername)/$(filename)", value)
-#     println("   $(filename) serialized")
-#     println("Converting $(filename) to python...")
-#     flush(stdout)
-#     if typeof(value) <: Dict
-#         @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
-#             pickle.dump(PyDict(Dict(Tuple.(keys(value)) .=> values(value))), f)
-#         end
-#     elseif typeof(value) <: Vector
-#         @pywith pybuiltin("open")("$(foldername)/python_data/$(filename[1:end-4]).pkl","wb") as f begin
-#             pickle.dump(PyObject(value), f)
-#         end
-#     end
-#     println("   $(filename) pickled")
-#     flush(stdout)
-# end
-
-
 function int2label(t::Integer)
     if t == 0
         t_str = "0"
@@ -213,6 +191,7 @@ function int2label(t::Integer)
     end
     return t_str
 end
+
 
 function int2str(t::Integer)
     if t == 0
@@ -245,53 +224,64 @@ function mymod(v::Vector{<:Integer}, n::Integer)
     return (a -> mymod(a, n)).(v)
 end
 
-function plaquette_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
-    return Int64[2((row-1)*Lx + column-1) + 1, 2((row-1)*Lx + column-1) + 2, 2((mymod(row+1, Ly)-1)*Lx + column-1) + 1, 2((row-1)*Lx + mymod(column+1,Lx)-1) + 2]
-end
+# function plaquette_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
+#     return Int64[2((row-1)*Lx + column-1) + 1, 2((row-1)*Lx + column-1) + 2, 2((mymod(row+1, Ly)-1)*Lx + column-1) + 1, 2((row-1)*Lx + mymod(column+1,Lx)-1) + 2]
+# end
 
 # function star_idx(column::Integer, row::Integer; Lx::Integer, Ly::Integer)
 #     return Int64[2((row-1)*Lx + column-1) + 1, 2((row-1)*Lx + column-1) + 2, 2((mymod(row+1, Ly)-1)*Lx + column-1) + 1, 2((row-1)*Lx + mymod(column+1,Lx)-1) + 2]
 # end
 
-function row_idx(row::Integer; Lx::Integer)
-    return Int64[2(row-1)*Lx + 1:2:2(row*Lx -1) + 1;]
-end
+# function row_idx(row::Integer; Lx::Integer)
+#     return Int64[2(row-1)*Lx + 1:2:2(row*Lx -1) + 1;]
+# end
 
-function column_idx(column::Integer; Lx::Integer, Ly::Integer)
-    return Int64[2column:2Lx:2((Ly-1)*Lx + column-1) + 2;]
-end
+# function column_idx(column::Integer; Lx::Integer, Ly::Integer)
+#     return Int64[2column:2Lx:2((Ly-1)*Lx + column-1) + 2;]
+# end
 
-function draw_grid(state::Vector{Int8}; Lx::Integer, Ly::Integer, legend::Union{Dict, Nothing}=nothing)
-    if !isnothing(legend)
-        s = replace(state, legend...)
-    else
-        s = state
-    end
-    for y in 0:Ly-1
-        for x in 0:Lx-1
-            print("+--$(s[2x+1 + 2y*Lx])--")
-        end
-        println("+")
-        for x in 1:Lx
-            print("|     ")
-        end
-        println("|")
-        for x in 0:Lx-1
-            print("$(s[2x+2 + 2y*Lx])     ")
-        end
-        println("$(s[2 + 2y*Lx])")
-        for x in 1:Lx
-            print("|     ")
-        end
-        println("|")
-    end
-    for x in 0:Lx-1
-        print("+--$(s[2x+1])--")
-    end
-    println("+")
-end
+# function draw_grid(state::Vector{Int8}; Lx::Integer, Ly::Integer, legend::Union{Dict, Nothing}=nothing)
+#     if !isnothing(legend)
+#         s = replace(state, legend...)
+#     else
+#         s = state
+#     end
+#     for y in 0:Ly-1
+#         for x in 0:Lx-1
+#             print("+--$(s[2x+1 + 2y*Lx])--")
+#         end
+#         println("+")
+#         for x in 1:Lx
+#             print("|     ")
+#         end
+#         println("|")
+#         for x in 0:Lx-1
+#             print("$(s[2x+2 + 2y*Lx])     ")
+#         end
+#         println("$(s[2 + 2y*Lx])")
+#         for x in 1:Lx
+#             print("|     ")
+#         end
+#         println("|")
+#     end
+#     for x in 0:Lx-1
+#         print("+--$(s[2x+1])--")
+#     end
+#     println("+")
+# end
 
+"""
+    issubarray(needle, haystack)
 
+Determine if `needle` is a subarray of `haystack`
+
+# Arguments
+- `states::Vector{Vector{<:Integer}}`: vector with states
+- `legend::Vector{Pair{String, String}} = nothing`: rules for substituting integers with symbols
+
+# Returns
+- `Vector{String}`: string labels
+"""
 function issubarray(needle, haystack)
     getView(vec::Vector{Int8}, i::Integer, len::Integer) = view(vec, i:i+len-1)
     ithview(i::Integer) = getView(haystack, i, length(needle))
