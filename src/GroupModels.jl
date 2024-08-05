@@ -93,6 +93,19 @@ function calc_group_elem_permutation(state::Union{Tuple{Vararg{Int8}}, Vector{In
 end
 
 
+"""
+    construct_d_len_iteratively(L, d_len_n, group_product, filename, n=1)
+
+Construct `d_len` in an iterative way (d_len is a dictionary, where keys are group elements and values are the number of states in the corresponding Krylov sector). Start from system size `L[1]` and end with the system size `L[2]`.
+Use the (typically small) dictionary `d_len_n` (where often `n=1`)
+
+# Arguments
+- `L::Tuple{Integer, Integer}`: a tuple of two system sizes. `d_len` will be constructed for system sizes from `L[1]` to `L[2]`.
+- `d_len_n::Dict`: dictionary to use for incremental steps (often `n=1`)
+- `group_product::Function`: function that defines a group product on whatever keys label the group elements in `d_len`
+- `filename::String`: filename to save results to
+- `n::Integer=1`: length of words in dictionary `d_len_n`
+"""
 function construct_d_len_iteratively(L::Tuple{Integer, Integer}, d_len_n::Dict, group_product::Function, filename::String, n::Integer=1)
     group_elems_left = keys(d_len_n)
     g_type = typeof(first(group_elems_left))
@@ -111,6 +124,21 @@ function construct_d_len_iteratively(L::Tuple{Integer, Integer}, d_len_n::Dict, 
     end
 end
 
+
+"""
+    construct_d_len_iteratively(L, d_len_n, group_product)
+
+If the group is finite and all group elements are known, then we can construct `d_len`, where each value is a vector of integers, where each integer is the number of states for the corresponding system size.
+
+# Arguments
+- `L::Integer`: maximal system size for which `d_len` is required
+- `d_len_n::Dict`: dictionary to use for incremental steps (values are integers), typically n=1.
+- `group_product::Function`: function that defines a group product on whatever keys label the group elements in `d_len`
+- `all_group_elems::Vector`: vector of all group elements
+
+# Returns
+- `d_len`: a dictionary, where keys are group elements and values are the number of states in the corresponding Krylov sector
+"""
 function construct_d_len_iteratively(L::Integer, d_len_n::Dict, group_product::Function, all_group_elems::Vector)
     group_elems_1 = keys(d_len_n)
     type_of_g = typeof(first(group_elems_1))
@@ -143,6 +171,9 @@ function construct_d_len_iteratively(L::Integer, d_len_n::Dict, group_product::F
 end
 
 
+"""
+Same as construct_d_len_iteratively(L, d_len_n, group_product), but start from an existing `d_len`.
+"""
 function construct_d_len_iteratively(L::Integer, d_len_n::Dict, group_product::Function, all_group_elems::Vector, d_len::Dict)
     group_elems_1 = keys(d_len_n)
     type_of_g = typeof(first(group_elems_1))
@@ -182,7 +213,7 @@ end
 
 
 """
-    isreducible(word::Vector{Int8}, relation::Vector{Int8})
+    isreducible(word, relation, inverses)
 
 Given a generating relation (any word that multiplies to the identity), figure out whether the word can be reduced to a shorter word through a single
 application of the relation.
@@ -212,7 +243,7 @@ function isreducible(word::Vector{Int8}, relation::Vector{Int8}, inverses::Dict{
 end
 
 """
-    isreducible(word::Vector{Int8}, relation::Vector{Int8})
+    isreducible(word, relations, inverses)
 
 Given a list of generating relations (words that multiply to the identity), figure out whether the word can be reduced to a shorter word through a single
 application of any of the relations.
