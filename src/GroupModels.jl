@@ -126,7 +126,7 @@ end
 
 
 """
-    construct_d_len_iteratively(L, d_len_n, group_product)
+    construct_d_len_iteratively(L, d_len_n, group_product, all_group_elems)
 
 If the group is finite and all group elements are known, then we can construct `d_len`, where each value is a vector of integers, where each integer is the number of states for the corresponding system size.
 
@@ -172,7 +172,7 @@ end
 
 
 """
-Same as construct_d_len_iteratively(L, d_len_n, group_product), but start from an existing `d_len`.
+Same as `construct_d_len_iteratively(L, d_len_n, group_product)`, but start from an existing `d_len`.
 """
 function construct_d_len_iteratively(L::Integer, d_len_n::Dict, group_product::Function, all_group_elems::Vector, d_len::Dict)
     group_elems_1 = keys(d_len_n)
